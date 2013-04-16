@@ -14,6 +14,7 @@ npm install katt-player
 katt-player [--engine=linear] [--port=1337] FOLDER      # default engine is linear, port is 1337
 katt-player [--engine=linear] [--port=1337] FILE1 FILE2 # accepts blueprints as well
 katt-player --engine=path/to/engine.js FOLDER           # use a custom engine
+NODE_ENV=development katt-player FOLDER                 # enable logging to console, instead of console.log
 ```
 
 ```coffee

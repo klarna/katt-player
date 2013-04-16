@@ -28,5 +28,7 @@ if (kattPlayer.engines[argv.engine]) {
 }
 app = kattPlayer(engine);
 app.load.apply(this, argv._);
-console.log('Server start on http://127.0.0.1:' + argv.port);
+if (process.env.NODE_ENV !== 'development') {
+    console.log('Server start on http://127.0.0.1:' + argv.port);
+}
 app.listen(argv.port);
