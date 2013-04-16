@@ -25,6 +25,7 @@ else
 
 kattPlayer = (engine) ->
   app = express()
+  app.winston = winston
   app.scenarios = {}
 
   loadBlueprint = (blueprint) ->
@@ -52,7 +53,7 @@ kattPlayer = (engine) ->
   app.use express.cookieParser()
   app.use express.session
     secret: 'Lorem ipsum dolor sit amet.'
-  app.use engine app, winston
+  app.use engine app
 
   app
 
