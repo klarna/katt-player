@@ -1,0 +1,50 @@
+{
+  "name": "katt-player",
+  "description": "KATT player is a mock HTTP server that replies with HTTP responses based on KATT blueprints.",
+  "preferGlobal": false,
+  "private": true,
+  "version": "0.0.1",
+  "author": "Klarna AB",
+  "contributors": [
+    "Andrei Necualu <@andreineculau>"
+  ],
+  "users": [
+    "andreineculau"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "gitosis@git.internal.machines:zz/andrei.neculau/katt-player.git"
+  },
+  "keywords": [
+    "katt",
+    "http",
+    "server",
+    "blueprint",
+    "mock"
+  ],
+  "license": "Apache 2.0",
+  "engines": {
+    "node": ">=0.8.21"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6.2",
+    "katt-blueprint-parser": "~1.0.1",
+    "express": "~3.1.2",
+    "optimist": "~0.4.0",
+    "glob": "~3.1.21",
+    "lodash": "~1.1.1"
+  },
+  "devDependencies": {
+    "testem": "~0.2.83",
+    "mocha": "~1.9.0",
+    "chai": "~1.5.0",
+    "nock": "~0.17.3"
+  },
+  "optionalDependencies": {
+    "growl": "~1.7.0"
+  },
+  "bin": {
+    "katt-player": "./cli.js"
+  },
+  "main": "index.js"
+}
