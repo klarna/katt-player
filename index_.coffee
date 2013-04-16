@@ -50,6 +50,7 @@ kattPlayer = (engine) ->
     appListen.apply app, args
 
   app.engine = engine
+  app.use express.bodyParser()
   app.use express.cookieParser()
   app.use express.session
     secret: 'Lorem ipsum dolor sit amet.'
@@ -60,5 +61,6 @@ kattPlayer = (engine) ->
 
 kattPlayer.engines =
   linear: require './engines/linear'
+  linearCheck: require './engines/linearCheck'
 
 module.exports = kattPlayer

@@ -4,6 +4,13 @@ katt = require '../katt'
 blueprintParser = require 'katt-blueprint-parser'
 #Blueprint = require('katt-blueprint-parser').ast.Blueprint
 
+maybeJsonBody = (reqres) ->
+  if /\bjson\b/.test(reqres.headers['content-type'] or '')
+    try
+      return JSON.parse reqres.body
+    catch e
+  reqres.body
+
 module.exports = (app, ignore = {}) ->
   winston = app.winston
   contexts =
@@ -18,6 +25,7 @@ module.exports = (app, ignore = {}) ->
 
   sendError = (res, status, error) ->
     winston.error error
+    res.set 'Content-Type', 'text/plain'
     res.send status, error
 
   app.use (req, res, next) ->
@@ -27,13 +35,17 @@ module.exports = (app, ignore = {}) ->
       return sendError res, 500, 'Please define a scenario'
 
     context = contexts[req.sessionID] or {}
-    try
     if req.cookies?.katt_scenario? and (not context?.scenario? or context.scenario isnt req.cookies.katt_scenario)
       scenario = req.cookies.katt_scenario
       blueprint = app.scenarios[scenario]
       return sendError res, 500, "Unable to find blueprint file for scenario #{scenario}"  unless blueprint?
       try
         blueprintObj = blueprintParser.parse fs.readFileSync blueprint, 'utf8'
+        for operation in blueprintObj.operations
+          operation.request.headers = katt.normalizeHeaders operation.request.headers
+          operation.request.body = maybeJsonBody operation.request  if operation.request.body?
+          operation.response.headers = katt.normalizeHeaders operation.response.headers
+          operation.response.body = maybeJsonBody operation.response  if operation.response.body?
       catch e
         return sendError res, 500, "Unable to parse blueprint file #{context.blueprint} for scenario #{context.scenario}\n#{e}"
 
@@ -60,13 +72,17 @@ module.exports = (app, ignore = {}) ->
     context.operation = nextOperation
 
     return res.send 404  unless ignore.url or req.url is operation.url
-    # FIXME check if request headers and body match operation.request
 
-    headersDiff = if ignore.headers then [] else katt.makeHeadersDiff req.headers, operation.request.headers
-    return sendError res, 400, "#{logPrefix}Request headers do not match\n#{headersDif}"  if headersDiff?.length
+    headersDiff = if ignore.headers then [] else katt.validateHeaders req.headers, operation.request.headers
+    if headersDiff?.length
+      headersDiff = JSON.stringify headersDiff, null, 2
+      return sendError res, 400, "#{logPrefix}Request headers do not match\n#{headersDiff}"
 
-    bodyDiff = if ignore.body then [] else katt.makeBodyDiff req.body, operation.request.body
-    return sendError res, 400, "#{logPrefix}Request Headers/Body do not match\n#{bodyDif}"  if bodyDiff?.length
+    reqBody = maybeJsonBody req
+    bodyDiff = if ignore.body then [] else katt.validateBody reqBody, operation.request.body
+    if bodyDiff?.length
+      bodyDiff = JSON.stringify bodyDiff, null, 2
+      return sendError res, 400, "#{logPrefix}Request Headers/Body do not match\n#{bodyDiff}"
 
     winston.info "#{logPrefix}OK"
 
