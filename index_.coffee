@@ -3,6 +3,9 @@ path = require 'path'
 glob = require 'glob'
 winston = require 'winston'
 express = require 'express'
+crypto = require 'crypto'
+md5 = (text) ->
+  crypto.createHash('md5').update(text).digest 'hex'
 
 globOptions =
   nosort: true
@@ -28,21 +31,24 @@ kattPlayer = (engine) ->
   app.winston = winston
   app.scenarios = {}
 
-  loadBlueprint = (blueprint) ->
-    scenario = blueprint.replace '.apib', ''
-    if app.scenarios[scenario]?
-      winston.warn "Duplicate scenario called #{name}\nin  #{app.scenarios[name]}\nand #{blueprint}"
-    app.scenarios[scenario] = blueprint
+  loadScenario = (filename) ->
+    id = md5 filename
+    app.scenarios[id] = app.scenarios[filename] = {
+      id
+      filename
+      blueprint: undefined
+    }
 
   app.load = (args...) ->
-    for blueprint in args
-      continue  unless fs.existsSync blueprint
-      blueprint = path.normalize blueprint
+    for scenario in args
+      continue  unless fs.existsSync scenario
+      scenario = path.normalize scenario
 
-      if fs.statSync(blueprint).isDirectory()
-        blueprints = glob.sync "#{blueprint}/**/*.apib", globOptions
-      else if fs.statSync(blueprint).isFile()
-        loadBlueprint blueprint
+      if fs.statSync(scenario).isDirectory()
+        scenarios = glob.sync "#{scenario}/**/*.apib", globOptions
+        app.load scenarios
+      else if fs.statSync(scenario).isFile()
+        loadScenario scenario
 
   appListen = app.listen
   app.listen = (args...) ->
