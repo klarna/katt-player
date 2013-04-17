@@ -5,21 +5,38 @@ blueprintParser = require 'katt-blueprint-parser'
 #Blueprint = require('katt-blueprint-parser').ast.Blueprint
 
 maybeJsonBody = (reqres) ->
-  if /\bjson\b/.test(reqres.headers['content-type'] or '')
+  if katt.isJsonBody reqres
     try
       return JSON.parse reqres.body
     catch e
   reqres.body
 
+validateRequest = (actualRequest, expectedRequest, vars = {}, result = [], ignore = {}) ->
+  urlResult = if ignore.url then [] else katt.validate 'url', actualRequest.url, expectedRequest.url, vars
+  result = result.concat urlResult  if urlResult.length
+
+  methodResult = if ignore.method then [] else katt.validate 'method', actualRequest.method, expectedRequest.method, vars
+  result = result.concat methodResult  if methodResult.length
+
+  headersResult = if ignore.headers then [] else katt.validateHeaders actualRequest.headers, expectedRequest.headers, vars
+  result = result.concat headersResult  if headersResult.length
+
+  actualRequestBody = maybeJsonBody actualRequest
+  bodyResult = if ignore.body then [] else katt.validateBody actualRequestBody, expectedRequest.body, vars
+  result = result.concat bodyResult  if bodyResult.length
+
+  result
+
 module.exports = (app, ignore = {}) ->
   winston = app.winston
   contexts =
     sessionID:
-      blueprint: undefined
       scenario: undefined
-      operation: undefined
+      operationIndex: undefined
+      vars: undefined
   _.defaults ignore,
     url: false
+    method: false
     headers: false
     body: false
 
@@ -35,25 +52,24 @@ module.exports = (app, ignore = {}) ->
       return sendError res, 500, 'Please define a scenario'
 
     context = contexts[req.sessionID] or {}
-    if req.cookies?.katt_scenario? and (not context?.scenario? or context.scenario isnt req.cookies.katt_scenario)
-      scenario = req.cookies.katt_scenario
-      blueprint = app.scenarios[scenario]
-      return sendError res, 500, "Unable to find blueprint file for scenario #{scenario}"  unless blueprint?
+    scenario_id = req.cookies?.katt_scenario
+    if scenario_id? and (not context.scenario? or context.scenario?.id isnt scenario_id)
+      scenario = app.scenarios[scenario_id]
+      return sendError res, 500, "Unknown scenario #{scenario_id}"  unless scenario?
       try
-        blueprintObj = blueprintParser.parse fs.readFileSync blueprint, 'utf8'
-        for operation in blueprintObj.operations
+        blueprint = scenario.blueprint or= blueprintParser.parse fs.readFileSync scenario.filename, 'utf8'
+        for operation in blueprint.operations
           operation.request.headers = katt.normalizeHeaders operation.request.headers
           operation.request.body = maybeJsonBody operation.request  if operation.request.body?
           operation.response.headers = katt.normalizeHeaders operation.response.headers
           operation.response.body = maybeJsonBody operation.response  if operation.response.body?
       catch e
-        return sendError res, 500, "Unable to parse blueprint file #{context.blueprint} for scenario #{context.scenario}\n#{e}"
+        return sendError res, 500, "Unable to find/parse blueprint file #{scenario.filename} for scenario #{scenario.filename}\n#{e}"
 
       context = contexts[req.sessionID] = {
         scenario
-        blueprint
-        blueprintObj
-        operation: req.cookies.katt_operation or 0
+        operationIndex: req.cookies.katt_operation or 0
+        vars: {}
       }
     # FIXME refresh vars
     res.locals.context = context
@@ -62,33 +78,29 @@ module.exports = (app, ignore = {}) ->
 
   (req, res, next) ->
     context = res.locals.context
-    nextOperation = context.operation + 1
-    logPrefix = "#{context.scenario}\##{nextOperation} - "
+    nextOperationIndex = context.operationIndex + 1
+    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex} - "
     winston.info "#{logPrefix}#{req.method} #{req.url}"
 
-    operation = context.blueprintObj.operations[nextOperation-1]
-    return sendError res, 500, "Operation #{nextOperation} has not been defined in blueprint file #{context.blueprint} for #{context.scenario}"  unless operation
+    operation = context.scenario.blueprint.operations[nextOperationIndex-1]
+    return sendError res, 403, "Operation #{nextOperationIndex} has not been defined in blueprint file #{context.scenario.filename} for #{context.scenario.id}"  unless operation
 
-    context.operation = nextOperation
+    context.operationIndex = nextOperationIndex
 
-    return res.send 404  unless ignore.url or req.url is operation.url
-
-    headersDiff = if ignore.headers then [] else katt.validateHeaders req.headers, operation.request.headers
-    if headersDiff?.length
-      headersDiff = JSON.stringify headersDiff, null, 2
-      return sendError res, 400, "#{logPrefix}Request headers do not match\n#{headersDiff}"
-
-    reqBody = maybeJsonBody req
-    bodyDiff = if ignore.body then [] else katt.validateBody reqBody, operation.request.body
-    if bodyDiff?.length
-      bodyDiff = JSON.stringify bodyDiff, null, 2
-      return sendError res, 400, "#{logPrefix}Request Headers/Body do not match\n#{bodyDiff}"
+    result = []
+    validateRequest req, operation.request, context.vars, result, ignore
+    if result.length
+      result = JSON.stringify result, null, 2
+      return sendError res, 403, "#{logPrefix}Request does not match\n#{result}"
 
     winston.info "#{logPrefix}OK"
 
     # res.cookie katt_scenario, context.scenario
-    res.cookie 'katt_operation', context.operation
+    res.cookie 'katt_operation', context.operationIndex
+
+    headers = katt.extractDeep(operation.response.headers, context.vars) or {}
+    body = katt.extractDeep operation.response.body, context.vars
 
     res.status operation.response.status
-    res.set header, headerValue  for header, headerValue of operation.response.headers
-    res.send operation.response.body
+    res.set header, headerValue  for header, headerValue of headers
+    res.send body

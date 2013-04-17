@@ -5,6 +5,7 @@ module.exports = (args...) ->
   ignore = args[1] or {}
   _.merge ignore,
     url: false
+    method: false
     headers: true
     body: true
   args[1] = ignore
