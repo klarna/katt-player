@@ -95,7 +95,7 @@ module.exports = (app, ignore = {}) ->
 
     winston.info "#{logPrefix}OK"
 
-    # res.cookie katt_scenario, context.scenario
+    res.cookie 'katt_scenario', context.scenario.id
     res.cookie 'katt_operation', context.operationIndex
 
     headers = katt.extractDeep(operation.response.headers, context.vars) or {}
