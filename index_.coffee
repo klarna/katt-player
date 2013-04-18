@@ -46,7 +46,7 @@ kattPlayer = (engine) ->
 
       if fs.statSync(scenario).isDirectory()
         scenarios = glob.sync "#{scenario}/**/*.apib", globOptions
-        app.load scenarios
+        app.load.apply null, scenarios
       else if fs.statSync(scenario).isFile()
         loadScenario scenario
 
