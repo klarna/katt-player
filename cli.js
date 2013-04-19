@@ -1,34 +1,51 @@
 #!/usr/bin/env node
 /*jshint node:true*/
-var kattPlayer = require('./index.js'),
-    fs = require('fs'),
-    argv,
+var fs = require('fs'),
+    kattPlayer = require('./index'),
+    pkg = require('./package'),
+    ArgumentParser = require('argparse').ArgumentParser,
+    parser,
+    args,
     app,
     engine;
 
-argv = require('optimist')
-       .usage('Usage:$0 [--engine=linear] [--port=1337] FOLDER1 FILE2')
-       .options('engine', {
-           'default': 'linear'
-       })
-       .options('port', {
-           'default': '1337'
-       })
-       .check(function(argv) {
-           if (argv._.length === 0) {
-               throw new Error('Please give at least one KATT blueprint');
-           }
-       })
-       .argv;
+parser = new ArgumentParser({
+    description: pkg.description,
+    version: pkg.version,
+    addHelp:true
+});
+parser.addArgument(
+    [ '-e', '--engine' ],
+    {
+        help: 'Engine as built-in name or filename path',
+        defaultValue: 'linear'
+    }
+);
+parser.addArgument(
+    [ '-p', '--port' ],
+    {
+        help: 'Port number',
+        defaultValue: '1337'
+    }
+);
+parser.addArgument(
+    ['scenarios'],
+    {
+        help: 'Scenarios as files/folders',
+        nargs: '+'
 
-if (kattPlayer.engines[argv.engine]) {
-    engine = kattPlayer.engines[argv.engine];
-} else if (fs.existsSync(argv.engine)) {
-    engine = require(argv.engine);
+    }
+);
+args = parser.parseArgs();
+
+if (kattPlayer.engines[args.engine]) {
+    engine = kattPlayer.engines[args.engine];
+} else if (fs.existsSync(args.engine)) {
+    engine = require(args.engine);
 }
 app = kattPlayer(engine);
-app.load.apply(this, argv._);
+app.load.apply(this, args.scenarios);
 if (process.env.NODE_ENV !== 'development') {
-    console.log('Server start on http://127.0.0.1:' + argv.port);
+    console.log('Server start on http://127.0.0.1:' + args.port);
 }
-app.listen(argv.port);
+app.listen(args.port);
