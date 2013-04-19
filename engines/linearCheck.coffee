@@ -68,7 +68,7 @@ module.exports = (app, ignore = {}) ->
 
       context = contexts[req.sessionID] = {
         scenario
-        operationIndex: req.cookies.katt_operation or 0
+        operationIndex: Number(req.cookies.katt_operation) or 0
         vars: {}
       }
     # FIXME refresh vars
