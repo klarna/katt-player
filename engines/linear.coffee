@@ -1,12 +1,13 @@
 _ = require 'lodash'
-linearCheck = require './linearCheck'
+linearCheckEngine = require './linearCheck'
 
-module.exports = (args...) ->
-  ignore = args[1] or {}
-  _.merge ignore,
-    url: false
-    method: false
-    headers: true
-    body: true
-  args[1] = ignore
-  linearCheck.apply @, args
+module.exports = class linearEngine extends linearCheckEngine
+  constructor: (app, options = {}) ->
+    options.check or= {}
+    _.merge options,
+      check:
+        url: true
+        method: true
+        headers: false
+        body: false
+    super options

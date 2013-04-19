@@ -29,11 +29,12 @@ else
 kattPlayer = (engine) ->
   app = express()
   app.winston = winston
-  app.scenarios = {}
+  app.scenariosById = {}
+  app.scenariosByFilename = {}
 
   loadScenario = (filename) ->
     id = md5 filename
-    app.scenarios[id] = app.scenarios[filename] = {
+    app.scenariosById[id] = app.scenariosByFilename[filename] = {
       id
       filename
       blueprint: undefined
@@ -60,7 +61,7 @@ kattPlayer = (engine) ->
   app.use express.cookieParser()
   app.use express.session
     secret: 'Lorem ipsum dolor sit amet.'
-  app.use engine app
+  app.use new engine(app).middleware
 
   app
 
