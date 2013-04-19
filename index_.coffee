@@ -69,5 +69,6 @@ kattPlayer = (engine) ->
 kattPlayer.engines =
   linear: require './engines/linear'
   linearCheck: require './engines/linearCheck'
+  checkout: require './engines/checkout'
 
 module.exports = kattPlayer
