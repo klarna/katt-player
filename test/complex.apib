@@ -1,0 +1,333 @@
+--- rps-init-email-postal_code-email ---
+
+---
+Green. Returning customer simple flow. Changes email
+---
+
+# step 1
+POST /checkout/orders
+> Accept: application/vnd.klarna.checkout.aggregated-order-v2+json
+> Authorization: Klarna NU4c2f8JaISv1yNioTS/HNc27uqY7m2S0yDKxkiBGGM=
+> Content-Type: application/vnd.klarna.checkout.aggregated-order-v2+json
+> User-Agent: Klarna TEST
+{
+    "cart": {
+        "items": [
+            {
+                "type": "physical",
+                "reference": "123456789",
+                "name": "Tomatoes (Spain)",
+                "quantity": 10,
+                "unit_price": 12300,
+                "discount_rate": 1000,
+                "tax_rate": 1855
+            }
+        ]
+    },
+    "purchase_currency": "sek",
+    "purchase_country": "se",
+    "locale": "sv-se",
+    "merchant_reference": {
+        "id1": "123456789",
+        "id2": "123456789",
+        "invoice_number": "123456789",
+        "url": "klarna.com",
+        "random_key": "still valid"
+    },
+    "merchant": {
+        "terms_uri": "http://merchant.com/toc.php",
+        "id": "2",
+        "checkout_uri": "http://merchant.com/checkout.php?sid=123&klarna_order={checkout.order.uri}",
+        "confirmation_uri": "http://merchant.com/thankyou.php?sid=123&klarna_order={checkout.order.uri}",
+        "push_uri": "http://merchant.com/thankyou.php?sid=123&klarna_order={checkout.order.uri}"
+    }
+}
+< 201
+< Content-Type: application/vnd.klarna.checkout.aggregated-order-v2+json
+< Location: {{>order_uri}}
+
+# step 2
+GET {{<order_uri}}
+> Accept: application/vnd.klarna.checkout.aggregated-order-v2+json
+> Authorization: Klarna N8emBqd4Ksy54b92YLSe7ylhuhn4tG4Q6Vy07hkVmKE=
+< 200
+< Cache-Control: max-age=0, no-cache, no-store
+< Content-Type: application/vnd.klarna.checkout.aggregated-order-v2+json
+< Pragma: no-cache
+{
+    "cart": {
+        "total_price_excluding_tax": 93378,
+        "total_tax_amount": 17322,
+        "total_price_including_tax": 110700,
+        "items": [
+            {
+                "reference": "123456789",
+                "name": "Tomatoes (Spain)",
+                "quantity": 10,
+                "unit_price": 12300,
+                "tax_rate": 1855,
+                "discount_rate": 1000,
+                "type": "physical",
+                "total_price_including_tax": 110700,
+                "total_price_excluding_tax": 93378,
+                "total_tax_amount": 17322
+            }
+        ]
+    },
+    "purchase_currency": "sek",
+    "purchase_country": "se",
+    "locale": "sv-se",
+    "status": "checkout_incomplete",
+    "merchant_reference": {
+        "id1": "123456789",
+        "id2": "123456789",
+        "invoice_number": "123456789",
+        "url": "klarna.com",
+        "random_key": "still valid"
+    },
+    "shipping_address": {
+        "country": "se"
+    },
+    "merchant": {
+        "terms_uri": "http://merchant.com/toc.php",
+        "id": "2",
+        "checkout_uri": "{{_}}",
+        "confirmation_uri": "{{>redirect_uri}}",
+        "push_uri": "{{_}}"
+    },
+    "gui": {
+        "snippet": "{{_}}",
+        "layout": "desktop"
+    },
+    "billing_address": {
+        "country": "se"
+    },
+    "options": {
+        "allow_separate_shipping_address": false
+    },
+    "customer": {
+        "type": "person"
+    },
+    "id": "{{_}}",
+    "started_at": "{{_}}",
+    "last_modified_at": "{{_}}"
+}
+
+# step 3
+GET {{<order_uri}}
+> Accept: application/vnd.klarna.checkout.server-order-v1+json
+> Authorization: KlarnaCheckout sargantana
+> User-Agent: Klarna TEST
+< 200
+< Cache-Control: max-age=0, no-cache, no-store
+< Content-Type: application/vnd.klarna.checkout.server-order-v1+json
+< Pragma: no-cache
+{
+    "shared": {
+        "billing_address": {
+            "country": "swe"
+        }
+    },
+    "required_fields": [
+        "challenge.email"
+    ],
+    "cart": {
+        "total_price_excluding_tax": 93378,
+        "total_tax_amount": 17322,
+        "total_price_including_tax": 110700
+    },
+    "advertised_payment_method": {
+        "id": "3061",
+        "type": "account",
+        "data": {
+            "interest_rate": 1990,
+            "months": 0,
+            "minimum_pay": 5000,
+            "monthly_pay": 5000,
+            "setup_fee": 0,
+            "monthly_invoice_fee": 2900,
+            "currency": "SEK"
+        }
+    }
+}
+
+# step 4
+POST {{<order_uri}}
+> Accept: application/vnd.klarna.checkout.server-order-v1+json
+> Authorization: KlarnaCheckout sargantana
+> Content-Type: application/vnd.klarna.checkout.client-order-v1+json
+> User-Agent: Klarna TEST
+{
+    "shared": {
+        "challenge": {
+            "email": "test-rps@checkout.klarna.com"
+        },
+        "billing_address": {
+            "country": "swe"
+        }
+    }
+}
+< 200
+< Content-Type: application/vnd.klarna.checkout.server-order-v1+json
+{
+    "shared": {
+        "challenge": {
+            "email": "test-rps@checkout.klarna.com"
+        },
+        "billing_address": {
+            "email": "test-rps@checkout.klarna.com",
+            "country": "swe"
+        }
+    },
+    "required_fields": [
+        "challenge.postal_code"
+    ],
+    "cart": {
+        "total_price_excluding_tax": 93378,
+        "total_tax_amount": 17322,
+        "total_price_including_tax": 110700
+    },
+    "advertised_payment_method": {
+        "id": "3061",
+        "type": "account",
+        "data": {
+            "interest_rate": 1990,
+            "months": 0,
+            "minimum_pay": 5000,
+            "monthly_pay": 5000,
+            "setup_fee": 0,
+            "monthly_invoice_fee": 2900,
+            "currency": "SEK"
+        }
+    }
+}
+
+# step 5
+POST {{<order_uri}}
+> Accept: application/vnd.klarna.checkout.server-order-v1+json
+> Authorization: KlarnaCheckout sargantana
+> Content-Type: application/vnd.klarna.checkout.client-order-v1+json
+> User-Agent: Klarna TEST
+{
+    "shared": {
+        "challenge": {
+            "email": "test-rps@checkout.klarna.com",
+            "postal_code": "11343"
+        },
+        "billing_address": {
+            "email": "test-rps@checkout.klarna.com",
+            "country": "swe"
+        }
+    }
+}
+< 200
+< Content-Type: application/vnd.klarna.checkout.server-order-v1+json
+{
+    "shared": {
+        "challenge": {
+            "email": "test-rps@checkout.klarna.com",
+            "postal_code": "11343"
+        },
+        "billing_address": {
+            "given_name": "Test",
+            "family_name": "Rps",
+            "street_address": "Norra Stationsgatan 61",
+            "postal_code": "11343",
+            "city": "Stockholm",
+            "country": "swe",
+            "email": "test-rps@checkout.klarna.com",
+            "phone": "070 *** ** 58"
+        }
+    },
+    "obfuscated_fields": [
+        "billing_address.phone"
+    ],
+    "available_payment_methods": [
+        {
+            "id": "-1",
+            "type": "post_pay",
+            "data": "{{_}}"
+        }
+    ],
+    "cart": {
+        "total_price_excluding_tax": 93378,
+        "total_tax_amount": 17322,
+        "total_price_including_tax": 110700
+    },
+    "advertised_payment_method": {
+        "id": "3061",
+        "type": "account",
+        "data": {
+            "interest_rate": 1990,
+            "months": 0,
+            "minimum_pay": 5000,
+            "monthly_pay": 5000,
+            "setup_fee": 0,
+            "monthly_invoice_fee": 2900,
+            "currency": "SEK"
+        }
+    }
+}
+
+# step 6
+POST {{<order_uri}}
+> Accept: application/vnd.klarna.checkout.server-order-v1+json
+> Authorization: KlarnaCheckout sargantana
+> Content-Type: application/vnd.klarna.checkout.client-order-v1+json
+> User-Agent: Klarna TEST
+{
+    "shared": {
+        "challenge": {
+            "email": "changed@checkout.klarna.com",
+            "postal_code": "11343"
+        },
+        "billing_address": {
+            "given_name": "Test",
+            "family_name": "Rps",
+            "street_address": "Norra Stationsgatan 61",
+            "postal_code": "11343",
+            "city": "Stockholm",
+            "country": "swe",
+            "email": "test-rps@checkout.klarna.com",
+            "phone": "070 *** ** 58"
+        },
+        "selected_payment_method": {
+            "id": "-1",
+            "type": "post_pay"
+        }
+    }
+}
+< 200
+< Content-Type: application/vnd.klarna.checkout.server-order-v1+json
+{
+    "shared": {
+        "challenge": {
+            "email": "changed@checkout.klarna.com"
+        },
+        "billing_address": {
+            "country": "swe",
+            "email": "changed@checkout.klarna.com"
+        }
+    },
+    "required_fields": [
+        "challenge.postal_code"
+    ],
+    "cart": {
+        "total_price_excluding_tax": 93378,
+        "total_tax_amount": 17322,
+        "total_price_including_tax": 110700
+    },
+    "advertised_payment_method": {
+        "id": "3061",
+        "type": "account",
+        "data": {
+            "interest_rate": 1990,
+            "months": 0,
+            "minimum_pay": 5000,
+            "monthly_pay": 5000,
+            "setup_fee": 0,
+            "monthly_invoice_fee": 2900,
+            "currency": "SEK"
+        }
+    }
+}

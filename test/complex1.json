@@ -1,0 +1,32 @@
+{
+    "cart": {
+        "items": [
+            {
+                "type": "physical",
+                "reference": "123456789",
+                "name": "Tomatoes (Spain)",
+                "quantity": 10,
+                "unit_price": 12300,
+                "discount_rate": 1000,
+                "tax_rate": 1855
+            }
+        ]
+    },
+    "purchase_currency": "sek",
+    "purchase_country": "se",
+    "locale": "sv-se",
+    "merchant_reference": {
+        "id1": "123456789",
+        "id2": "123456789",
+        "invoice_number": "123456789",
+        "url": "klarna.com",
+        "random_key": "still valid"
+    },
+    "merchant": {
+        "terms_uri": "http://merchant.com/toc.php",
+        "id": "2",
+        "checkout_uri": "http://merchant.com/checkout.php?sid=123&klarna_order={checkout.order.uri}",
+        "confirmation_uri": "http://merchant.com/thankyou.php?sid=123&klarna_order={checkout.order.uri}",
+        "push_uri": "http://merchant.com/thankyou.php?sid=123&klarna_order={checkout.order.uri}"
+    }
+}
