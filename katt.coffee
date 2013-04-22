@@ -56,21 +56,24 @@ exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
   result.concat [['not_equal', key, actualValue, expectedValue]]
 
 exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
-  return exports.validate key, actualValue, expectedValue, vars, result  unless isPlainObjectOrArray(actualValue) and isPlainObjectOrArray(expectedValue)
-  keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
-  for key in keys
-    if isPlainObjectOrArray expectedValue[key]
-      exports.validateDeep key, actualValue[key], expectedValue[key], vars, result
-    else
-      exports.validate key, actualValue[key], expectedValue[key], vars, result
-  result
+  if isPlainObjectOrArray actualValue and isPlainObjectOrArrayexpectedValue
+    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
+    for key in keys
+      if isPlainObjectOrArray expectedValue[key]
+        exports.validateDeep key, actualValue[key], expectedValue[key], vars, result
+      else
+        exports.validate key, actualValue[key], expectedValue[key], vars, result
+    result
+  else
+    exports.validate key, actualValue, expectedValue, vars, result
 
 exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}) ->
   result = []
   actualHeaders = exports.normalizeHeaders actualHeaders
   expectedHeaders = exports.normalizeHeaders expectedHeaders
 
-  exports.validate header, actualHeaders[header], expectedHeaders[header], vars, result  for header of expectedHeaders
+  for header of expectedHeaders
+    exports.validate header, actualHeaders[header], expectedHeaders[header], vars, result
   result
 
 exports.validateBody = (actualBody, expectedBody, vars = {}, result = []) ->
@@ -103,14 +106,16 @@ exports.store = (actualValue, expectedValue, vars = {}) ->
   vars[expectedValue] = actualValue
 
 exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
-  return exports.store actualValue, expectedValue, vars  unless isPlainObjectOrArray actualValue and isPlainObjectOrArray expectedValue
-  keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
-  for key in keys
-    if isPlainObjectOrArray expectedValue[key]
-      exports.storeDeep actualValue[key], expectedValue[key], vars
-    else
-      exports.store actualValue[key], expectedValue[key], vars
-  vars
+  if isPlainObjectOrArray actualValue and isPlainObjectOrArray expectedValue
+    keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
+    for key in keys
+      if isPlainObjectOrArray expectedValue[key]
+        exports.storeDeep actualValue[key], expectedValue[key], vars
+      else
+        exports.store actualValue[key], expectedValue[key], vars
+    vars
+  else
+    exports.store actualValue, expectedValue, vars
 
 # EXTRACT
 exports.extract = (expectedValue, vars = {}) ->
@@ -121,15 +126,17 @@ exports.extract = (expectedValue, vars = {}) ->
   vars[expectedValue]
 
 exports.extractDeep = (expectedValue, vars = {}) ->
-  return exports.extract expectedValue, vars  unless isPlainObjectOrArray expectedValue
-  keys = _.keys expectedValue
-  expectedValue = _.clone expectedValue
-  for key in keys
-    if isPlainObjectOrArray expectedValue[key]
-      expectedValue[key] = exports.extractDeep expectedValue[key], vars
-    else
-      expectedValue[key] = exports.extract expectedValue[key], vars
-  expectedValue
+  if isPlainObjectOrArray expectedValue
+    keys = _.keys expectedValue
+    expectedValue = _.clone expectedValue
+    for key in keys
+      if isPlainObjectOrArray expectedValue[key]
+        expectedValue[key] = exports.extractDeep expectedValue[key], vars
+      else
+        expectedValue[key] = exports.extract expectedValue[key], vars
+    expectedValue
+  else
+    exports.extract expectedValue, vars
 
 # RUN
 exports.run = (scenario, params = {}, vars = {}) ->
@@ -138,7 +145,8 @@ exports.run = (scenario, params = {}, vars = {}) ->
   exports.runScenario scenario, blueprint.operations, params, vars
 
 exports.runScenario = (scenario, blueprintOrOperations, params = {}, vars = {}) ->
-  return exports.runScenario scenario, blueprintOrOperations.operations, params, vars  if blueprintOrOperations.operations?
+  if blueprintOrOperations.operations?
+    exports.runScenario scenario, blueprintOrOperations.operations, params, vars
   operations = blueprintOrOperations
   for operation in operations
     request = makeRequest operation.request, params, vars
