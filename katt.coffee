@@ -17,6 +17,8 @@ TAGS =
   EXTRACT_END: '}}'
   STORE_BEGIN: '{{>'
   STORE_END: '}}'
+  MARKER_BEGIN: '{'
+  MARKER_END: '}'
   # SUB_BEGIN: '{{>'
   # SUB_END: '<}}'
 TAGS_RE = do () ->
@@ -24,9 +26,9 @@ TAGS_RE = do () ->
   result[tagName] = regexEscape tag  for tagName, tag of TAGS
   result
 
-extractRE = new RegExp "^#{TAGS_RE.EXTRACT_BEGIN}.+#{TAGS_RE.EXTRACT_END}$", 'g'
-storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}.+#{TAGS_RE.STORE_END}$", 'g'
-# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}.+#{TAGS_RE.SUBE_END}$", 'g'
+extractRE = new RegExp "^#{TAGS_RE.EXTRACT_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.EXTRACT_END}$", 'g'
+storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$", 'g'
+# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$", 'g'
 matchAnyRE = new RegExp TAGS_RE.MATCH_ANY, 'g'
 
 #
