@@ -61,7 +61,7 @@ kattPlayer = (engine) ->
   app.use express.cookieParser()
   app.use express.session
     secret: 'Lorem ipsum dolor sit amet.'
-  app.use new engine(app).middleware
+  app.use engine(app).middleware
 
   app
 

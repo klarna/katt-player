@@ -3,6 +3,7 @@ linearCheckEngine = require './linearCheck'
 
 module.exports = class linearEngine extends linearCheckEngine
   constructor: (app, options = {}) ->
+    return new linearEngine(app, options)  unless @ instanceof linearEngine
     options.check or= {}
     _.merge options,
       check:

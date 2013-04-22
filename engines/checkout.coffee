@@ -6,6 +6,7 @@ module.exports = class checkoutEngine extends linearCheckEngine
 
 
   constructor: (app, options = {}) ->
+    return new checkoutEngine(app, options)  unless @ instanceof checkoutEngine
     _.merge options,
       hooks:
         preSend: @_preSendHook

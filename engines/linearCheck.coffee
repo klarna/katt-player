@@ -4,21 +4,23 @@ katt = require '../katt'
 blueprintParser = require 'katt-blueprint-parser'
 #Blueprint = require('katt-blueprint-parser').ast.Blueprint
 
-module.exports = class liniarEngine
+module.exports = class linearCheckEngine
   options: undefined
   _app: undefined
   _winston: undefined
   _contexts: undefined
 
 
-  constructor: (@_app, @options = {}) ->
+  constructor: (app, options = {}) ->
+    return new linearCheckEngine(app, options)  unless @ instanceof linearCheckEngine
+    @_app = app
     @_winston = @_app.winston
     @_contexts =
       sessionID:
         scenario: undefined
         operationIndex: undefined
         vars: undefined
-    _.merge @options, {
+    @options = _.merge options, {
       hooks:
         preSend: undefined
         postSend: undefined
