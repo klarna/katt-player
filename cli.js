@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /*jshint node:true*/
 var fs = require('fs'),
+    ArgumentParser = require('argparse').ArgumentParser,
     kattPlayer = require('./index'),
     pkg = require('./package'),
-    ArgumentParser = require('argparse').ArgumentParser,
     parser,
     args,
     app,

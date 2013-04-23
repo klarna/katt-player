@@ -12,7 +12,7 @@ module.exports = class linearCheckEngine
 
 
   constructor: (app, options = {}) ->
-    return new linearCheckEngine(app, options)  unless @ instanceof linearCheckEngine
+    return new linearCheckEngine(app, options)  unless this instanceof linearCheckEngine
     @_app = app
     @_winston = @_app.winston
     @_contexts =

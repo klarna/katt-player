@@ -5,6 +5,7 @@ blueprintParser = require 'katt-blueprint-parser'
 normalizeHeader = (header) ->
   header.trim().toLowerCase()
 
+
 isPlainObjectOrArray = (obj) ->
   _.isPlainObject(obj) or _.isArray(obj)
 
@@ -38,10 +39,12 @@ matchAnyRE = new RegExp TAGS_RE.MATCH_ANY, 'g'
 exports.isJsonBody = (reqres) ->
   /\bjson$/.test(reqres.headers['content-type'] or '')
 
+
 exports.normalizeHeaders = (headers) ->
   result = {}
   result[normalizeHeader(header)] = headerValue  for header, headerValue of headers
   result
+
 
 # VALIDATE
 exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
@@ -55,6 +58,7 @@ exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
   return result.concat [['empty_value', key, actualValue, expectedValue]]  if storeRE.test actualValue
   result.concat [['not_equal', key, actualValue, expectedValue]]
 
+
 exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
   if isPlainObjectOrArray actualValue and isPlainObjectOrArrayexpectedValue
     keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
@@ -67,6 +71,7 @@ exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
   else
     exports.validate key, actualValue, expectedValue, vars, result
 
+
 exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}) ->
   result = []
   actualHeaders = exports.normalizeHeaders actualHeaders
@@ -75,6 +80,7 @@ exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}) ->
   for header of expectedHeaders
     exports.validate header, actualHeaders[header], expectedHeaders[header], vars, result
   result
+
 
 exports.validateBody = (actualBody, expectedBody, vars = {}, result = []) ->
   result = []
@@ -85,16 +91,19 @@ exports.validateBody = (actualBody, expectedBody, vars = {}, result = []) ->
     # expectedBody = JSON.stringify expectedBody, null, 2  unless _.isString expectedBody
     exports.validate 'body', actualBody, expectedBody, vars, result
 
+
 exports.validateResponse = (actualResponse, expectedResponse, vars = {}, result = []) ->
   # TODO check status
   # TODO check headers
   # TODO check body
+
 
 # SUBSTITUTE ?!
 # exports.substitute = (string, subVars) ->
 #   for subVar, subValue of subVars
 #     RE = new RegExp regexEscape("#{SUB_BEGIN_TAG}#{subVar}#{SUB_END_TAG}"), 'g'
 #     string = string.replace RE, subValue
+
 
 # STORE
 exports.store = (actualValue, expectedValue, vars = {}) ->
@@ -104,6 +113,7 @@ exports.store = (actualValue, expectedValue, vars = {}) ->
   expectedValue = expectedValue.replace TAGS.STORE_BEGIN, ''
   expectedValue = expectedValue.replace TAGS.STORE_END, ''
   vars[expectedValue] = actualValue
+
 
 exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
   if isPlainObjectOrArray actualValue and isPlainObjectOrArray expectedValue
@@ -117,6 +127,7 @@ exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
   else
     exports.store actualValue, expectedValue, vars
 
+
 # EXTRACT
 exports.extract = (expectedValue, vars = {}) ->
   return expectedValue  unless _.isString expectedValue
@@ -124,6 +135,7 @@ exports.extract = (expectedValue, vars = {}) ->
   expectedValue = expectedValue.replace TAGS.EXTRACT_BEGIN, ''
   expectedValue = expectedValue.replace TAGS.EXTRACT_END, ''
   vars[expectedValue]
+
 
 exports.extractDeep = (expectedValue, vars = {}) ->
   if isPlainObjectOrArray expectedValue
@@ -138,11 +150,13 @@ exports.extractDeep = (expectedValue, vars = {}) ->
   else
     exports.extract expectedValue, vars
 
+
 # RUN
 exports.run = (scenario, params = {}, vars = {}) ->
   blueprint = blueprintParser fs.readFileSync scenario, 'utf8'
   # TODO implement timeouts, spawn process?
   exports.runScenario scenario, blueprint.operations, params, vars
+
 
 exports.runScenario = (scenario, blueprintOrOperations, params = {}, vars = {}) ->
   if blueprintOrOperations.operations?

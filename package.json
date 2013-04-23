@@ -8,9 +8,6 @@
   "contributors": [
     "Andrei Necualu <@andreineculau>"
   ],
-  "users": [
-    "andreineculau"
-  ],
   "repository": {
     "type": "git",
     "url": "gitosis@git.internal.machines:zz/andrei.neculau/katt-player.git"
@@ -46,6 +43,5 @@
   },
   "bin": {
     "katt-player": "./cli.js"
-  },
-  "main": "index.js"
+  }
 }
