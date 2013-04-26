@@ -45,12 +45,7 @@ module.exports = class linearCheckEngine
       scenario = @_app.scenariosById[scenario_id] or @_app.scenariosByFilename[scenario_id]
       return @sendError res, 500, "Unknown scenario #{scenario_id}"  unless scenario?
       try
-        blueprint = scenario.blueprint or= blueprintParser.parse fs.readFileSync scenario.filename, 'utf8'
-        for operation in blueprint.operations
-          operation.request.headers = katt.normalizeHeaders operation.request.headers
-          operation.request.body = @maybeJsonBody operation.request  if operation.request.body?
-          operation.response.headers = katt.normalizeHeaders operation.response.headers
-          operation.response.body = @maybeJsonBody operation.response  if operation.response.body?
+        blueprint = scenario.blueprint or= katt.readScenario scenario.filename
       catch e
         return @sendError res, 500, "Unable to find/parse blueprint file #{scenario.filename} for scenario #{scenario.id}\n#{e}"
 
@@ -100,14 +95,6 @@ module.exports = class linearCheckEngine
       next()
 
 
-  maybeJsonBody: (reqres) ->
-    if katt.isJsonBody reqres
-      try
-        return JSON.parse reqres.body
-      catch e
-    reqres.body
-
-
   sendError: (res, status, error) ->
     @_winston.error error
     res.set 'Content-Type', 'text/plain'
@@ -127,7 +114,7 @@ module.exports = class linearCheckEngine
     headersResult = @options.check.headers ? katt.validateHeaders actualRequest.headers, expectedRequest.headers, vars
     result = result.concat headersResult  if headersResult.length
 
-    actualRequestBody = @maybeJsonBody actualRequest
+    actualRequestBody = katt.maybeJsonBody actualRequest
     bodyResult = []
     bodyResult = @options.check.body ? katt.validateBody actualRequestBody, expectedRequest.body, vars
     result = result.concat bodyResult  if bodyResult.length

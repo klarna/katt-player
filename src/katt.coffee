@@ -40,6 +40,14 @@ exports.isJsonBody = (reqres) ->
   /\bjson$/.test(reqres.headers['content-type'] or '')
 
 
+exports.maybeJsonBody = (reqres) ->
+  if exports.isJsonBody reqres
+    try
+      return JSON.parse reqres.body
+    catch e
+  reqres.body
+
+
 exports.normalizeHeaders = (headers) ->
   result = {}
   result[normalizeHeader(header)] = headerValue  for header, headerValue of headers
@@ -153,9 +161,19 @@ exports.extractDeep = (expectedValue, vars = {}) ->
 
 # RUN
 exports.run = (scenario, params = {}, vars = {}) ->
-  blueprint = blueprintParser fs.readFileSync scenario, 'utf8'
+  blueprint = exports.readScenario scenario
   # TODO implement timeouts, spawn process?
   exports.runScenario scenario, blueprint.operations, params, vars
+
+
+exports.readScenario = (scenario) ->
+  blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
+  for operation in blueprint.operations
+    operation.request.headers = exports.normalizeHeaders operation.request.headers
+    operation.request.body = exports.maybeJsonBody operation.request  if operation.request.body?
+    operation.response.headers = exports.normalizeHeaders operation.response.headers
+    operation.response.body = exports.maybeJsonBody operation.response  if operation.response.body?
+  blueprint
 
 
 exports.runScenario = (scenario, blueprintOrOperations, params = {}, vars = {}) ->
