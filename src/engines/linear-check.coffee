@@ -4,17 +4,17 @@ katt = require '../katt'
 blueprintParser = require 'katt-blueprint-parser'
 #Blueprint = require('katt-blueprint-parser').ast.Blueprint
 
-module.exports = class linearCheckEngine
+
+module.exports = class LinearCheckEngine
   options: undefined
   _app: undefined
   _winston: undefined
   _contexts: undefined
 
-
   constructor: (app, options = {}) ->
-    return new linearCheckEngine(app, options)  unless this instanceof linearCheckEngine
+    return new LinearCheckEngine(app, options)  unless this instanceof LinearCheckEngine
     @_app = app
-    @_winston = @_app.winston
+    @_winston = @_app.katt.winston
     @_contexts =
       sessionID:
         scenario: undefined
@@ -32,7 +32,12 @@ module.exports = class linearCheckEngine
     }, _.defaults
 
 
+  makeContext: (scenario) ->
+
+
   middleware: (req, res, next) =>
+    makeContext = () ->
+
     unless req.cookies?.katt_scenario?
       res.clearCookie 'katt_scenario'
       res.clearCookie 'katt_operation'
@@ -40,14 +45,13 @@ module.exports = class linearCheckEngine
 
     context = @_contexts[req.sessionID] or {}
 
-    scenario_id = req.cookies?.katt_scenario
-    if scenario_id? and (not context.scenario? or context.scenario?.id isnt scenario_id)
-      scenario = @_app.scenariosById[scenario_id] or @_app.scenariosByFilename[scenario_id]
-      return @sendError res, 500, "Unknown scenario #{scenario_id}"  unless scenario?
-      try
-        blueprint = scenario.blueprint or= katt.readScenario scenario.filename
-      catch e
-        return @sendError res, 500, "Unable to find/parse blueprint file #{scenario.filename} for scenario #{scenario.id}\n#{e}"
+    scenarioFilename = req.cookies?.katt_scenario
+    scenario = @_app.katt.scenariosByFilename[scenarioFilename]
+
+    isNewScenario = not context.scenario? or context.scenario?.filename isnt scenarioFilename
+    if isNewScenario
+      return @sendError res, 500, "Unknown scenario #{scenarioFilename}"  unless scenario?
+      blueprint = scenario.blueprint
 
       context = @_contexts[req.sessionID] = {
         scenario
@@ -57,11 +61,13 @@ module.exports = class linearCheckEngine
     # FIXME refresh vars
 
     nextOperationIndex = context.operationIndex + 1
-    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex} - "
-    @_winston.info "#{logPrefix}#{req.method} #{req.url}"
+    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
+    @_winston.info "#{logPrefix} > #{req.method} #{req.url}"
 
-    operation = context.scenario.blueprint.operations[nextOperationIndex-1]
-    return @sendError res, 403, "Operation #{nextOperationIndex} has not been defined in blueprint file #{context.scenario.filename} for #{context.scenario.id}"  unless operation
+    operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
+    unless operation
+      return @sendError res, 403,
+        "Operation #{nextOperationIndex} has not been defined in blueprint file for #{context.scenario.filename}"
 
     context.operationIndex = nextOperationIndex
 
@@ -69,11 +75,11 @@ module.exports = class linearCheckEngine
     @validateRequest req, operation.request, context.vars, result
     if result.length
       result = JSON.stringify result, null, 2
-      return @sendError res, 403, "#{logPrefix}Request does not match\n#{result}"
+      return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
-    @_winston.info "#{logPrefix}OK"
+    @_winston.info "#{logPrefix} < OK"
 
-    res.cookie 'katt_scenario', context.scenario.id
+    res.cookie 'katt_scenario', context.scenario.filename
     res.cookie 'katt_operation', context.operationIndex
 
     headers = katt.extractDeep(operation.response.headers, context.vars) or {}
@@ -87,8 +93,7 @@ module.exports = class linearCheckEngine
       @callHook 'postSend', context, req, res
 
 
-  callHook: (name, context, req, res, next) ->
-    next or= () ->
+  callHook: (name, context, req, res, next = ->) ->
     if @options.hooks[name]?
       @options.hooks[name] context, req, res, next
     else

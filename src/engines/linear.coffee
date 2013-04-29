@@ -1,9 +1,10 @@
 _ = require 'lodash'
-linearCheckEngine = require './linearCheck'
+LinearCheckEngine = require './linear-check'
 
-module.exports = class linearEngine extends linearCheckEngine
+
+module.exports = class LinearEngine extends LinearCheckEngine
   constructor: (app, options = {}) ->
-    return new linearEngine(app, options)  unless this instanceof linearEngine
+    return new LinearEngine(app, options)  unless this instanceof LinearEngine
     options.check or= {}
     _.merge options,
       check:

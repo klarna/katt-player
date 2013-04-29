@@ -1,12 +1,13 @@
 _ = require 'lodash'
-linearCheckEngine = require './linearCheck'
+LinearCheckEngine = require './linear-check'
 
-module.exports = class checkoutEngine extends linearCheckEngine
+
+module.exports = class CheckoutEngine extends LinearCheckEngine
   @_preSendHooks: undefined
 
 
   constructor: (app, options = {}) ->
-    return new checkoutEngine(app, options)  unless this instanceof checkoutEngine
+    return new CheckoutEngine(app, options)  unless this instanceof CheckoutEngine
     _.merge options,
       hooks:
         preSend: @_preSendHook
@@ -19,7 +20,7 @@ module.exports = class checkoutEngine extends linearCheckEngine
 
 
   _MT: (name) ->
-   "application/vnd.klarna.checkout.#{name}+json"
+    "application/vnd.klarna.checkout.#{name}+json"
 
 
   _hasContentType: (reqres, name) ->

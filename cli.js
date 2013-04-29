@@ -43,8 +43,7 @@ if (kattPlayer.engines[args.engine]) {
 } else if (fs.existsSync(args.engine)) {
     engine = require(args.engine);
 }
-app = kattPlayer(engine);
-app.load.apply(this, args.scenarios);
+app = kattPlayer(engine, {scenarios: args.scenarios});
 if (process.env.NODE_ENV !== 'development') {
     console.log('Server start on http://127.0.0.1:' + args.port);
 }
