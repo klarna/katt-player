@@ -14,8 +14,8 @@ regexEscape = (text) ->
 
 TAGS =
   MATCH_ANY: '{{_}}'
-  EXTRACT_BEGIN: '{{<'
-  EXTRACT_END: '}}'
+  RECALL_BEGIN: '{{<'
+  RECALL_END: '}}'
   STORE_BEGIN: '{{>'
   STORE_END: '}}'
   MARKER_BEGIN: '{'
@@ -27,7 +27,7 @@ TAGS_RE = do () ->
   result[tagName] = regexEscape tag  for tagName, tag of TAGS
   result
 
-extractRE = new RegExp "^#{TAGS_RE.EXTRACT_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.EXTRACT_END}$", 'g'
+recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$", 'g'
 storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$", 'g'
 # subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$", 'g'
 matchAnyRE = new RegExp TAGS_RE.MATCH_ANY, 'g'
@@ -57,9 +57,9 @@ exports.normalizeHeaders = (headers) ->
 # VALIDATE
 exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
   return result  if matchAnyRE.test expectedValue
-  # maybe store, maybe extract
+  # maybe store, maybe recall
   exports.store actualValue, expectedValue, vars
-  expectedValue = exports.extract expectedValue, vars
+  expectedValue = exports.recall expectedValue, vars
 
   return result  if actualValue is expectedValue
   return result.concat [['missing_value', key, actualValue, expectedValue]]  unless actualValue?
@@ -136,27 +136,27 @@ exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
     exports.store actualValue, expectedValue, vars
 
 
-# EXTRACT
-exports.extract = (expectedValue, vars = {}) ->
+# RECALL
+exports.recall = (expectedValue, vars = {}) ->
   return expectedValue  unless _.isString expectedValue
-  return expectedValue  unless extractRE.test expectedValue
-  expectedValue = expectedValue.replace TAGS.EXTRACT_BEGIN, ''
-  expectedValue = expectedValue.replace TAGS.EXTRACT_END, ''
+  return expectedValue  unless recallRE.test expectedValue
+  expectedValue = expectedValue.replace TAGS.RECALL_BEGIN, ''
+  expectedValue = expectedValue.replace TAGS.RECALL_END, ''
   vars[expectedValue]
 
 
-exports.extractDeep = (expectedValue, vars = {}) ->
+exports.recallDeep = (expectedValue, vars = {}) ->
   if isPlainObjectOrArray expectedValue
     keys = _.keys expectedValue
     expectedValue = _.clone expectedValue
     for key in keys
       if isPlainObjectOrArray expectedValue[key]
-        expectedValue[key] = exports.extractDeep expectedValue[key], vars
+        expectedValue[key] = exports.recallDeep expectedValue[key], vars
       else
-        expectedValue[key] = exports.extract expectedValue[key], vars
+        expectedValue[key] = exports.recall expectedValue[key], vars
     expectedValue
   else
-    exports.extract expectedValue, vars
+    exports.recall expectedValue, vars
 
 
 # RUN

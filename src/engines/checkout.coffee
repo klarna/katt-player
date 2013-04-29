@@ -1,5 +1,10 @@
+crypto = require 'crypto'
 _ = require 'lodash'
 LinearCheckEngine = require './linear-check'
+
+
+md5 = (text) ->
+  crypto.createHash('md5').update(text).digest 'hex'
 
 
 module.exports = class CheckoutEngine extends LinearCheckEngine
@@ -13,10 +18,16 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
         preSend: @_preSendHook
         postSend: @_postSendHook
     @_preSendHooks = [
-      @_preSendHookAggV1
-      @_preSendHookAggV2
+      @_preSendHook_GET_AggV2
     ]
     super app, options
+
+
+  _modifyContext: (req, res, next) ->
+    context = req.context
+
+    id = md5(req.sessionID + req.context.scenario.filename) # to please isak 2013-04-29 /andrei
+    context.vars.order_uri = @options.vars.order_uri_template.replace '{/id}', "/#{id}"
 
 
   _MT: (name) ->
@@ -30,27 +41,22 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
     contentType is MT
 
 
-  _preSendHook: (context, req, res, next) =>
+  _preSendHook: (req, res, next) =>
     hookIndex = -1
     nextHook = (err) =>
       hookIndex += 1
       return next()  if hookIndex + 1 > @_preSendHooks.length
       fun = @_preSendHooks[hookIndex]
-      fun.call @, context, req, res, nextHook
+      fun.call @, req, res, nextHook
     nextHook()
 
 
-  _preSendHookAggV1: (context, req, res, next) =>
-    return next()  unless req.method is 'GET' and res.body? and @_hasContentType res, 'aggregated-order-v1'
-    res.body.gui.snippet = "SOME_HTML_STUFF"
-    next()
-
-
-  _preSendHookAggV2: (context, req, res, next) ->
+  _preSendHook_GET_AggV2: (req, res, next) ->
     return next()  unless req.method is 'GET' and res.body? and @_hasContentType res, 'aggregated-order-v2'
+
     res.body.gui.snippet = "SOME_HTML_STUFF"
     next()
 
 
-  _postSendHook: (context, req, res, next) =>
+  _postSendHook: (req, res, next) =>
     next()

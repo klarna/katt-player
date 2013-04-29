@@ -8,19 +8,21 @@ blueprintParser = require 'katt-blueprint-parser'
 module.exports = class LinearCheckEngine
   options: undefined
   _app: undefined
-  _winston: undefined
   _contexts: undefined
+  _modifyContext: -> # to please isak 2013-04-29 /andrei
 
   constructor: (app, options = {}) ->
     return new LinearCheckEngine(app, options)  unless this instanceof LinearCheckEngine
     @_app = app
-    @_winston = @_app.katt.winston
     @_contexts =
       sessionID:
         scenario: undefined
         operationIndex: undefined
         vars: undefined
     @options = _.merge options, {
+      default:
+        scenario: undefined
+        operation: 0
       hooks:
         preSend: undefined
         postSend: undefined
@@ -32,18 +34,16 @@ module.exports = class LinearCheckEngine
     }, _.defaults
 
 
-  makeContext: (scenario) ->
-
-
   middleware: (req, res, next) =>
-    makeContext = () ->
+    context = @_contexts[req.sessionID] or {}
+
+    req.cookies.katt_scenario or= @options.default.scenario
+    req.cookies.katt_operation or= @options.default.operation
 
     unless req.cookies?.katt_scenario?
       res.clearCookie 'katt_scenario'
       res.clearCookie 'katt_operation'
       return @sendError res, 500, 'Please define a scenario'
-
-    context = @_contexts[req.sessionID] or {}
 
     scenarioFilename = req.cookies?.katt_scenario
     scenario = @_app.katt.scenariosByFilename[scenarioFilename]
@@ -60,9 +60,12 @@ module.exports = class LinearCheckEngine
       }
     # FIXME refresh vars
 
+    req.context = context
+
+    @_modifyContext req, res
+
     nextOperationIndex = context.operationIndex + 1
     logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
-    @_winston.info "#{logPrefix} > #{req.method} #{req.url}"
 
     operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
     unless operation
@@ -77,31 +80,38 @@ module.exports = class LinearCheckEngine
       result = JSON.stringify result, null, 2
       return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
-    @_winston.info "#{logPrefix} < OK"
-
     res.cookie 'katt_scenario', context.scenario.filename
     res.cookie 'katt_operation', context.operationIndex
 
-    headers = katt.extractDeep(operation.response.headers, context.vars) or {}
-    res.body = katt.extractDeep operation.response.body, context.vars
+    headers = @recallDeep(operation.response.headers, context.vars) or {}
+    res.body = @recallDeep operation.response.body, context.vars
 
     res.status operation.response.status
     res.set header, headerValue  for header, headerValue of headers
 
-    @callHook 'preSend', context, req, res, () =>
+    @callHook 'preSend', req, res, () =>
       res.send res.body
-      @callHook 'postSend', context, req, res
+      @callHook 'postSend', req, res
 
 
-  callHook: (name, context, req, res, next = ->) ->
+  recallDeep: (value, vars) ->
+    replaceStoreWithRecall = (string) ->
+      string.replace /{{>/g, '{{<'
+    if _.isString value
+      value = replaceStoreWithRecall value
+    else
+      value[key] = replaceStoreWithRecall value[key]  for key in _.keys value
+    katt.recallDeep value, vars
+
+
+  callHook: (name, req, res, next = ->) ->
     if @options.hooks[name]?
-      @options.hooks[name] context, req, res, next
+      @options.hooks[name] req, res, next
     else
       next()
 
 
   sendError: (res, status, error) ->
-    @_winston.error error
     res.set 'Content-Type', 'text/plain'
     res.send status, error
 

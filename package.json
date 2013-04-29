@@ -29,8 +29,7 @@
     "express": "~3.1.2",
     "argparse": "~0.1.13",
     "glob": "~3.1.21",
-    "lodash": "~1.1.1",
-    "winston": "~0.6.2"
+    "lodash": "~1.1.1"
   },
   "devDependencies": {
     "testem": "~0.2.83",
