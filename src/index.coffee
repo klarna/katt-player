@@ -53,7 +53,11 @@ kattPlayer = (app, engine, options = {}) ->
     res.set or= (header, value) -> res.header header, value
     originalSend = res.send
     res.send = (statusCode, body) ->
-      res.statusCode = statusCode
+      if (typeof statusCode is 'number')
+        res.statusCode = statusCode
+      else
+        # no statusCode sent, just maybe body
+        body = statusCode
       originalSend.call res, body
     # TODO REMOVE ASAP
     engine.middleware req, res, next
