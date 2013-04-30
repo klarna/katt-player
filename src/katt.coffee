@@ -37,7 +37,8 @@ matchAnyRE = new RegExp TAGS_RE.MATCH_ANY, 'g'
 #
 
 exports.isJsonBody = (reqres) ->
-  /\bjson$/.test(reqres.headers['content-type'] or '')
+  contentType = reqres.headers?['content-type'] or reqres.get?('content-type') or ''
+  /\bjson\b/.test contentType
 
 
 exports.maybeJsonBody = (reqres) ->
