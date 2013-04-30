@@ -68,6 +68,8 @@ module.exports = class LinearCheckEngine
 
   middleware: (req, res, next) =>
     context = @_contexts[req.sessionID] or {}
+    # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
+    currentOperationIndex = context.operationIndex or 0
 
     req.cookies.katt_scenario or= @options.default.scenario
     req.cookies.katt_operation or= @options.default.operation
@@ -90,7 +92,16 @@ module.exports = class LinearCheckEngine
         operationIndex: Number(req.cookies.katt_operation) or 0
         vars: {}
       }
-    # FIXME refresh vars
+    else
+      context.operationIndex = req.cookies.katt_operation
+
+    # Check if we're FFW operations
+    if context.operationIndex > currentOperationIndex
+      # TODO run through currentOperationIndex+1 ... context.operationIndex
+      ###
+      - replay request (mock a req/res object or just abstract the functionality out of this middleware function)
+      - adjust context (operationIndex++)
+      ###
 
     req.context = context
 
