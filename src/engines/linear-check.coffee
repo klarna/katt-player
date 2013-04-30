@@ -41,8 +41,8 @@ module.exports = class LinearCheckEngine
     req.cookies.katt_operation or= @options.default.operation
 
     unless req.cookies?.katt_scenario?
-      res.clearCookie 'katt_scenario'
-      res.clearCookie 'katt_operation'
+      res.clearCookie 'katt_scenario', path: '/'
+      res.clearCookie 'katt_operation', path: '/'
       return @sendError res, 500, 'Please define a scenario'
 
     scenarioFilename = req.cookies?.katt_scenario
@@ -80,8 +80,8 @@ module.exports = class LinearCheckEngine
       result = JSON.stringify result, null, 2
       return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
-    res.cookie 'katt_scenario', context.scenario.filename
-    res.cookie 'katt_operation', context.operationIndex
+    res.cookie 'katt_scenario', context.scenario.filename, path: '/'
+    res.cookie 'katt_operation', context.operationIndex, path: '/'
 
     headers = @recallDeep(operation.response.headers, context.vars) or {}
     res.body = @recallDeep operation.response.body, context.vars
@@ -90,18 +90,18 @@ module.exports = class LinearCheckEngine
     res.set header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>
+      res.body = JSON.stringify(res.body, null, 4)  if katt.isJsonBody res
       res.send res.body
       @callHook 'postSend', req, res
 
 
-  recallDeep: (value, vars) ->
-    replaceStoreWithRecall = (string) ->
-      string.replace /{{>/g, '{{<'
+  recallDeep: (value, vars) =>
     if _.isString value
-      value = replaceStoreWithRecall value
+      value = value.replace /{{>/g, '{{<'
+      katt.recall value, vars
     else
-      value[key] = replaceStoreWithRecall value[key]  for key in _.keys value
-    katt.recallDeep value, vars
+      value[key] = @recallDeep value[key], vars  for key in _.keys value
+      value
 
 
   callHook: (name, req, res, next = ->) ->
