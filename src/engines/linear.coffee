@@ -12,4 +12,4 @@ module.exports = class LinearEngine extends LinearCheckEngine
         method: true
         headers: false
         body: false
-    super options
+    super app, options
