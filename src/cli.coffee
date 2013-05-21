@@ -8,7 +8,7 @@ pkg = require '../package'
 
 # For argument validation / transformation.
 CUSTOM_TYPES =
-  'KATT engine': (value) ->
+  engine: (value) ->
     if KattPlayer.hasEngine(value)
       KattPlayer.getEngine value
     else if fs.existsSync(value)
@@ -16,7 +16,7 @@ CUSTOM_TYPES =
     else
       throw new Error "Invalid engine: #{value}."
 
-  'JSON string': (value) ->
+  json: (value) ->
     try
       JSON.parse(value)
     catch e
@@ -34,7 +34,7 @@ parseArgs = ->
   parser.addArgument ['-e', '--engine'],
     help: "Engine as built-in [#{engines}] or file path. (%(defaultValue)s)"
     defaultValue: 'linear'
-    type: CUSTOM_TYPES['KATT engine']
+    type: CUSTOM_TYPES.engine
 
   parser.addArgument ['-p', '--port'],
     help: 'Port number. (%(defaultValue)d)'
@@ -49,7 +49,7 @@ parseArgs = ->
     help: 'Options for the engine. (%(defaultValue)s)'
     defaultValue: '{}'
     metavar: 'JSON_STRING'
-    type: CUSTOM_TYPES['JSON string']
+    type: CUSTOM_TYPES.json
     dest: 'engineOptions'
 
   parser.parseArgs()
