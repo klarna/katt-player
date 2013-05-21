@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "coffee-script": "~1.6.2",
-    "katt-blueprint-parser": "~1.0.1",
+    "katt-blueprint-parser": "~1.0.3",
     "express": "~3.1.2",
     "argparse": "~0.1.13",
     "glob": "~3.1.21",
