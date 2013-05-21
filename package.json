@@ -6,7 +6,8 @@
   "version": "0.0.1",
   "author": "Klarna AB",
   "contributors": [
-    "Andrei Necualu <@andreineculau>"
+    "Andrei Necualu <@andreineculau>",
+    "Isak Bakken <@isbakk>"
   ],
   "repository": {
     "type": "git",
