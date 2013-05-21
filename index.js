@@ -1,3 +1,3 @@
 /*jshint node:true*/
 require('coffee-script');
-module.exports = require('./src/index.coffee');
+module.exports = require('./src/katt-player.coffee');

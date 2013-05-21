@@ -3,7 +3,7 @@
 fs = require 'fs'
 argparse = require 'argparse'
 express = require 'express'
-KattPlayer = require './index'
+KattPlayer = require './katt-player'
 pkg = require '../package'
 
 # For argument validation / transformation.

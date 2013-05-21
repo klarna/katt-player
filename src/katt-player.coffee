@@ -39,24 +39,21 @@ express2Compatibility = (req, res, next) ->
   @getEngineNames =     -> Object.keys(ENGINES)
 
   constructor: (app, engine, options = {}) ->
-    @_constructor(options.scenarios)
+    @scenariosByFilename = {}
+    @loadScenarios(options.scenarios)
 
     app.katt = this
     app.engine = engine
 
-    app.use express2Compatibility
     app.use express.bodyParser()
     app.use express.cookieParser()
     app.use express.session
       secret: 'Lorem ipsum dolor sit amet.'
+
+    app.use express2Compatibility
     app.use engine.middleware
 
     app
-
-
-  _constructor: (scenarios = []) ->
-    @scenariosByFilename = {}
-    @loadScenarios(scenarios)  if scenarios
 
   loadScenario: (filename) ->
     try
@@ -68,7 +65,7 @@ express2Compatibility = (req, res, next) ->
       blueprint
     }
 
-  loadScenarios: (scenarios) ->
+  loadScenarios: (scenarios = []) ->
     for scenario in scenarios
       continue  unless fs.existsSync scenario
       scenario = path.normalize scenario
