@@ -1,6 +1,3 @@
-fs = require 'fs'
-path = require 'path'
-glob = require 'glob'
 express = require 'express'
 katt = require './katt'
 
@@ -8,10 +5,6 @@ ENGINES =
   'linear': require './engines/linear'
   'linear-check': require './engines/linear-check'
   'checkout': require './engines/checkout'
-
-GLOB_OPTIONS =
-  nosort: true
-  stat: false
 
 # Maintain compatibility with express2
 express2Compatibility = (req, res, next) ->
@@ -33,48 +26,17 @@ express2Compatibility = (req, res, next) ->
   next()
 
 
- class KattPlayer
-  @hasEngine = (engine) -> ENGINES[engine] isnt undefined
-  @getEngine = (engine) -> ENGINES[engine]
-  @getEngineNames =     -> Object.keys(ENGINES)
+exports.hasEngine = (engine) -> ENGINES[engine] isnt undefined
+exports.getEngine = (engine) -> ENGINES[engine]
+exports.getEngineNames =     -> Object.keys(ENGINES)
 
-  constructor: (app, engine, options = {}) ->
-    @scenariosByFilename = {}
-    @loadScenarios(options.scenarios)
-
-    app.katt = this
-    app.engine = engine
-
-    app.use express.bodyParser()
-    app.use express.cookieParser()
-    app.use express.session
-      secret: 'Lorem ipsum dolor sit amet.'
-
-    app.use express2Compatibility
-    app.use engine.middleware
-
-    app
-
-  loadScenario: (filename) ->
-    try
-      blueprint = katt.readScenario filename
-    catch e
-      throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
-    @scenariosByFilename[filename] = {
-      filename
-      blueprint
-    }
-
-  loadScenarios: (scenarios = []) ->
-    for scenario in scenarios
-      continue  unless fs.existsSync scenario
-      scenario = path.normalize scenario
-
-      if fs.statSync(scenario).isDirectory()
-        apibs = glob.sync "#{scenario}/**/*.apib", GLOB_OPTIONS
-        @loadScenarios apibs
-      else if fs.statSync(scenario).isFile()
-        @loadScenario scenario
-
-
-module.exports = KattPlayer
+exports.makeServer = (engine) ->
+  app = express()
+  app.engine = engine
+  app.use express.bodyParser()
+  app.use express.cookieParser()
+  app.use express.session
+    secret: 'Lorem ipsum dolor sit amet.'
+  app.use express2Compatibility
+  app.use engine.middleware
+  app

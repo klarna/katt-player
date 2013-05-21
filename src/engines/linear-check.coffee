@@ -1,19 +1,24 @@
 fs = require 'fs'
+path = require 'path'
+glob = require 'glob'
 _ = require 'lodash'
 katt = require '../katt'
 blueprintParser = require 'katt-blueprint-parser'
-#Blueprint = require('katt-blueprint-parser').ast.Blueprint
+
+
+GLOB_OPTIONS =
+  nosort: true
+  stat: false
 
 
 module.exports = class LinearCheckEngine
   options: undefined
-  _app: undefined
   _contexts: undefined
   _modifyContext: -> # to please isak 2013-04-29 /andrei
 
-  constructor: (app, options = {}) ->
-    return new LinearCheckEngine(app, options)  unless this instanceof LinearCheckEngine
-    @_app = app
+  constructor: (scenarios, options = {}) ->
+    return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
+    @scenariosByFilename = {}
     @_contexts =
       sessionID:
         scenario: undefined
@@ -32,6 +37,30 @@ module.exports = class LinearCheckEngine
         headers: true
         body: true
     }, _.defaults
+    @loadScenarios(scenarios)
+
+
+  loadScenario: (filename) ->
+    try
+      blueprint = katt.readScenario filename
+    catch e
+      throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
+    @scenariosByFilename[filename] = {
+      filename
+      blueprint
+    }
+
+
+  loadScenarios: (scenarios) ->
+    for scenario in scenarios
+      continue  unless fs.existsSync scenario
+      scenario = path.normalize scenario
+
+      if fs.statSync(scenario).isDirectory()
+        apibs = glob.sync "#{scenario}/**/*.apib", GLOB_OPTIONS
+        @loadScenarios apibs
+      else if fs.statSync(scenario).isFile()
+        @loadScenario scenario
 
 
   middleware: (req, res, next) =>
@@ -46,7 +75,7 @@ module.exports = class LinearCheckEngine
       return @sendError res, 500, 'Please define a scenario'
 
     scenarioFilename = req.cookies?.katt_scenario
-    scenario = @_app.katt.scenariosByFilename[scenarioFilename]
+    scenario = @scenariosByFilename[scenarioFilename]
 
     isNewScenario = not context.scenario? or context.scenario?.filename isnt scenarioFilename
     if isNewScenario

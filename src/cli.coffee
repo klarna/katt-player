@@ -2,15 +2,14 @@
 
 fs = require 'fs'
 argparse = require 'argparse'
-express = require 'express'
-KattPlayer = require './katt-player'
+kattPlayer = require './katt-player'
 pkg = require '../package'
 
 # For argument validation / transformation.
 CUSTOM_TYPES =
   engine: (value) ->
-    if KattPlayer.hasEngine(value)
-      KattPlayer.getEngine value
+    if kattPlayer.hasEngine(value)
+      kattPlayer.getEngine value
     else if fs.existsSync(value)
       require value
     else
@@ -23,8 +22,8 @@ CUSTOM_TYPES =
       throw new Error "Invalid JSON string: #{value}. #{e}."
 
 
-parseArgs = ->
-  engines = KattPlayer.getEngineNames().join(', ')
+parseArgs = (args) ->
+  engines = kattPlayer.getEngineNames().join(', ')
 
   parser = new argparse.ArgumentParser
     description: pkg.description
@@ -52,16 +51,14 @@ parseArgs = ->
     type: CUSTOM_TYPES.json
     dest: 'engineOptions'
 
-  parser.parseArgs()
+  parser.parseArgs(args)
 
 
 exports.main = (args = process.args) ->
   args = parseArgs(args)
-  app = express()
-  engine = new args.engine(app, args.engineOptions)
-  new KattPlayer(app, engine,
-    scenarios: args.scenarios
-  )
-  console.log 'Server start on http://127.0.0.1:' + args.port
-  app.listen args.port
+  engine = new args.engine(args.scenarios, args.engineOptions)
+  kattPlayer
+    .makeServer(engine)
+    .listen args.port, ->
+      console.log 'Server started on http://127.0.0.1:' + args.port
 

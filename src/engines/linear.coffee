@@ -3,8 +3,8 @@ LinearCheckEngine = require './linear-check'
 
 
 module.exports = class LinearEngine extends LinearCheckEngine
-  constructor: (app, options = {}) ->
-    return new LinearEngine(app, options)  unless this instanceof LinearEngine
+  constructor: (scenarios, options = {}) ->
+    return new LinearEngine(scenarios, options)  unless this instanceof LinearEngine
     options.check or= {}
     _.merge options,
       check:
@@ -12,4 +12,4 @@ module.exports = class LinearEngine extends LinearCheckEngine
         method: true
         headers: false
         body: false
-    super app, options
+    super scenarios, options
