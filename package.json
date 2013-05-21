@@ -43,5 +43,8 @@
   },
   "bin": {
     "katt-player": "./cli.js"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
