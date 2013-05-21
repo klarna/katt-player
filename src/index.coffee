@@ -4,14 +4,17 @@ glob = require 'glob'
 express = require 'express'
 katt = require './katt'
 
+ENGINES =
+  'linear': require './engines/linear'
+  'linear-check': require './engines/linear-check'
+  'checkout': require './engines/checkout'
 
-globOptions =
+GLOB_OPTIONS =
   nosort: true
   stat: false
 
-
 # Maintain compatibility with express2
-enableExpressCompatibilityMode = (req, res) ->
+express2Compatibility = (req, res, next) ->
   req.get or= (header)        -> req.header header
   res.get or= (header)        -> res.header header
   req.set or= (header, value) -> req.header header, value
@@ -27,33 +30,27 @@ enableExpressCompatibilityMode = (req, res) ->
       body = statusCode
     originalSend.call res, body
 
+  next()
+
 
  class KattPlayer
-  self = this
-
-  @engines =
-    linear:       require './engines/linear'
-    linearCheck:  require './engines/linear-check'
-    checkout:     require './engines/checkout'
-
-  @hasEngine = (engine) -> !!self.engines[engine]
-  @getEngine = (engine) -> self.engines[engine]
-
+  @hasEngine = (engine) -> ENGINES[engine] isnt undefined
+  @getEngine = (engine) -> ENGINES[engine]
+  @getEngineNames =     -> Object.keys(ENGINES)
 
   constructor: (app, engine, options = {}) ->
     @_constructor(options.scenarios)
 
     app.katt = this
     app.engine = engine
+
+    app.use express2Compatibility
     app.use express.bodyParser()
     app.use express.cookieParser()
     app.use express.session
       secret: 'Lorem ipsum dolor sit amet.'
+    app.use engine.middleware
 
-    app.use (req, res, next) ->
-      enableExpressCompatibilityMode req, res
-      # TODO REMOVE ASAP
-      engine.middleware req, res, next
     app
 
 
@@ -65,7 +62,7 @@ enableExpressCompatibilityMode = (req, res) ->
     try
       blueprint = katt.readScenario filename
     catch e
-      throw new Error "Unable to find/parse blueprint file for scenario #{filename}\n#{e}"
+      throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
     @scenariosByFilename[filename] = {
       filename
       blueprint
@@ -77,7 +74,7 @@ enableExpressCompatibilityMode = (req, res) ->
       scenario = path.normalize scenario
 
       if fs.statSync(scenario).isDirectory()
-        apibs = glob.sync "#{scenario}/**/*.apib", globOptions
+        apibs = glob.sync "#{scenario}/**/*.apib", GLOB_OPTIONS
         @loadScenarios apibs
       else if fs.statSync(scenario).isFile()
         @loadScenario scenario
