@@ -21,14 +21,19 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
       @_preSendHook_res_AggV2
     ]
     super scenarios, options
+    @_contexts.vars = _.merge
+      checkout_uri: '/missing-checkout-uri'
+      confirmation_uri: '/missing-confirmation-uri'
+      bootstrap_uri: 'data:text/javascript;base64,YWxlcnQoJ01pc3NpbmcgYm9vdHN0cmFwX3VyaSB2YXJpYWJsZScpOw=='
+      allow_separate_shipping_address: false
+    , @options.vars
 
 
   _modifyContext: (req, res, next) ->
     context = req.context
-
     id = md5(req.sessionID + req.context.scenario.filename) # to please isak 2013-04-29 /andrei
     id = md5(req.context.scenario.filename) # to please isak 2013-04-29 /andrei
-    context.vars.order_uri = @options.vars.order_uri_template.replace '{/id}', "/#{id}"
+    context.vars.order_uri = "http://#{@server.hostname}:#{@server.port}/checkout/orders/#{id}"
 
 
   _MT: (name) ->
@@ -62,7 +67,7 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
                     MERCHANT_TAC_TITLE:'Demobutiken (dev)',
                     MERCHANT_NAME:'Demobutiken (dev)',
                     GUI_OPTIONS:[],
-                    ALLOW_SEPARATE_SHIPPING_ADDRESS:#{@options.vars.allow_separate_shipping_address},
+                    ALLOW_SEPARATE_SHIPPING_ADDRESS:#{@_contexts.vars.allow_separate_shipping_address},
                     BOOTSTRAP_SRC:u
                 };
 
@@ -72,7 +77,7 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
                 n.src=u;
                 c.insertBefore(n,c.firstChild);
             })(this,'_klarnaCheckout',
-               'klarna-checkout-container',document,'#{@options.vars.bootstrap_uri}');
+               'klarna-checkout-container',document,'#{@_contexts.vars.bootstrap_uri}');
         /* ]]> */
         </script>
     </div>
@@ -92,14 +97,12 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
   _preSendHook_res_AggV2: (req, res, next) ->
     return next()  unless res.body? and @_hasContentType res, 'aggregated-order-v2'
 
-    #console.log req.context
-
     res.body = _.merge res.body,
       merchant:
-        checkout_uri: @options.vars.checkout_uri
-        confirmation_uri: @options.vars.confirmation_uri.replace '{checkout.order.uri}', encodeURIComponent req.context.vars.order_uri
+        checkout_uri: @_contexts.vars.checkout_uri
+        confirmation_uri: @_contexts.vars.confirmation_uri.replace '{checkout.order.uri}', encodeURIComponent req.context.vars.order_uri
       options:
-        allow_separate_shipping_address: @options.vars.allow_separate_shipping_address
+        allow_separate_shipping_address: @_contexts.vars.allow_separate_shipping_address
       gui:
         snippet: @_makeSnippet req, res
     next()

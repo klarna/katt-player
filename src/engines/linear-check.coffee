@@ -37,6 +37,9 @@ module.exports = class LinearCheckEngine
         headers: true
         body: true
     }
+    @server =
+      hostname: options.hostname
+      port: options.port
     @loadScenarios scenarios
 
 
