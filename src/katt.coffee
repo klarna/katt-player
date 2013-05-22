@@ -2,10 +2,6 @@ fs = require 'fs'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
 
-normalizeHeader = (header) ->
-  header.trim().toLowerCase()
-
-
 isPlainObjectOrArray = (obj) ->
   _.isPlainObject(obj) or _.isArray(obj)
 
@@ -45,13 +41,12 @@ exports.maybeJsonBody = (reqres) ->
   if exports.isJsonBody reqres
     try
       return JSON.parse reqres.body
-    catch e
   reqres.body
 
 
 exports.normalizeHeaders = (headers) ->
   result = {}
-  result[normalizeHeader(header)] = headerValue  for header, headerValue of headers
+  result[name.trim().toLowerCase()] = value  for name, value of headers
   result
 
 
@@ -171,10 +166,9 @@ exports.readScenario = (scenario) ->
   blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
   # NOTE probably should return a normalized copy
   for operation in blueprint.operations
-    operation.request.headers = exports.normalizeHeaders operation.request.headers
-    operation.request.body = exports.maybeJsonBody operation.request  if operation.request.body?
-    operation.response.headers = exports.normalizeHeaders operation.response.headers
-    operation.response.body = exports.maybeJsonBody operation.response  if operation.response.body?
+    for r in [operation.request, operation.response]
+      r.headers = exports.normalizeHeaders r.headers
+      r.body = exports.maybeJsonBody r  if r.body?
   blueprint
 
 
