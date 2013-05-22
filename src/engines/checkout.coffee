@@ -11,8 +11,8 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
   @_preSendHooks: undefined
 
 
-  constructor: (app, options = {}) ->
-    return new CheckoutEngine(app, options)  unless this instanceof CheckoutEngine
+  constructor: (scenarios, options = {}) ->
+    return new CheckoutEngine(scenarios, options)  unless this instanceof CheckoutEngine
     _.merge options,
       hooks:
         preSend: @_preSendHook
@@ -20,7 +20,7 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
     @_preSendHooks = [
       @_preSendHook_res_AggV2
     ]
-    super app, options
+    super scenarios, options
 
 
   _modifyContext: (req, res, next) ->
