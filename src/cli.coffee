@@ -2,6 +2,7 @@
 
 fs = require 'fs'
 argparse = require 'argparse'
+_ = require 'lodash'
 kattPlayer = require './katt-player'
 pkg = require '../package'
 
@@ -40,6 +41,13 @@ parseArgs = (args) ->
     defaultValue: 1337
     type: 'int'
 
+  # NOTE: 0.0.0.0 listens on all network interfaces.
+  # 127.0.0.1 would only listen on the loopback interface.
+  parser.addArgument ['--hostname'],
+    help: 'Server hostname / IP address. (%(defaultValue)d)'
+    defaultValue: '0.0.0.0'
+    type: 'string'
+
   parser.addArgument ['scenarios'],
     help: 'Scenarios as files/folders'
     nargs: '+'
@@ -54,11 +62,13 @@ parseArgs = (args) ->
   parser.parseArgs(args)
 
 
-exports.main = (args = process.args) ->
+main = exports.main = (args = process.args) ->
   args = parseArgs(args)
-  engine = new args.engine(args.scenarios, args.engineOptions)
-  kattPlayer
-    .makeServer(engine)
-    .listen args.port, ->
-      console.log 'Server started on http://127.0.0.1:' + args.port
+  {hostname, port} = args
+  options = _.merge({hostname, port}, args.engineOptions)
+  engine = new args.engine(args.scenarios, options)
+  kattPlayer.makeServer(engine).listen port, hostname, ->
+    console.log "Server started on http://#{hostname}:#{port}"
 
+
+main()  if require.main is module

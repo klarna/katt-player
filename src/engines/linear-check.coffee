@@ -36,8 +36,8 @@ module.exports = class LinearCheckEngine
         method: true
         headers: true
         body: true
-    }, _.defaults
-    @loadScenarios(scenarios)
+    }
+    @loadScenarios scenarios
 
 
   loadScenario: (filename) ->
