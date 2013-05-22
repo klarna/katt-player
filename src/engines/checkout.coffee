@@ -48,8 +48,7 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
         <script type="text/javascript">
         /* <![CDATA[ */
             (function(w,k,i,d,u,n,c){
-                w[k]=w[k]||function(){(w[k].q=w[k].q||[]).push(arguments)}; {{! Klarna Checkout API object }}
-
+                w[k]=w[k]||function(){(w[k].q=w[k].q||[]).push(arguments)};
                 w[k].config={
                     container:w.document.getElementById(i),
                     ORDER_URL:'#{req.context.vars.order_uri}',
