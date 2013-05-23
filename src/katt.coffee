@@ -166,9 +166,9 @@ exports.readScenario = (scenario) ->
   blueprint = blueprintParser.parse fs.readFileSync scenario, 'utf8'
   # NOTE probably should return a normalized copy
   for operation in blueprint.operations
-    for r in [operation.request, operation.response]
-      r.headers = exports.normalizeHeaders r.headers
-      r.body = exports.maybeJsonBody r  if r.body?
+    for reqres in [operation.request, operation.response]
+      reqres.headers = exports.normalizeHeaders reqres.headers
+      reqres.body = exports.maybeJsonBody reqres  if reqres.body?
   blueprint
 
 

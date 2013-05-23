@@ -5,9 +5,6 @@ express = require 'express'
   should
   nock
 } = require './utils'
-
-# Pro tip: if you want to break mocha, do this:
-# cli = require '../cli'. # -_-/
 cli = require '../src/cli'
 
 err = process.stderr.write

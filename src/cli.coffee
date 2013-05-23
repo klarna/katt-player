@@ -41,8 +41,6 @@ parseArgs = (args) ->
     defaultValue: 1337
     type: 'int'
 
-  # NOTE: 0.0.0.0 listens on all network interfaces.
-  # 127.0.0.1 would only listen on the loopback interface.
   parser.addArgument ['--hostname'],
     help: 'Server hostname / IP address. (%(defaultValue)d)'
     defaultValue: '0.0.0.0'
