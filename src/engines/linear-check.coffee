@@ -20,7 +20,8 @@ module.exports = class LinearCheckEngine
     return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
     @scenariosByFilename = {}
     @_contexts =
-      sessionID:
+      UID:
+        UID: undefined
         scenario: undefined
         operationIndex: undefined
         vars: undefined
@@ -67,33 +68,32 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
-    context = @_contexts[req.sessionID] or {}
-    # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
-    currentOperationIndex = context.operationIndex or 0
+    UID = req.sessionID + (req.cookies.katt_scenario or @options.default.scenario)
+    context = req.context = @_contexts[UID] or {
+      UID
+      scenario: undefined
+      operationIndex: 0
+      vars: {}
+    }
 
+    # Check for scenario filename
     req.cookies.katt_scenario or= @options.default.scenario
-    req.cookies.katt_operation or= @options.default.operation
-
-    unless req.cookies?.katt_scenario?
+    scenarioFilename = req.cookies.katt_scenario
+    unless scenarioFilename
       res.clearCookie 'katt_scenario', path: '/'
       res.clearCookie 'katt_operation', path: '/'
       return @sendError res, 500, 'Please define a scenario'
 
-    scenarioFilename = req.cookies?.katt_scenario
-    scenario = @scenariosByFilename[scenarioFilename]
+    # Check for scenario
+    context.scenario = scenario = @scenariosByFilename[scenarioFilename]
+    unless scenario?
+      return @sendError res, 500, "Unknown scenario with filename #{scenarioFilename}"
 
-    isNewScenario = not context.scenario? or context.scenario?.filename isnt scenarioFilename
-    if isNewScenario
-      return @sendError res, 500, "Unknown scenario #{scenarioFilename}"  unless scenario?
-      blueprint = scenario.blueprint
-
-      context = @_contexts[req.sessionID] = {
-        scenario
-        operationIndex: Number(req.cookies.katt_operation) or 0
-        vars: {}
-      }
-    else
-      context.operationIndex = req.cookies.katt_operation
+    # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
+    currentOperationIndex = context.operationIndex or 0
+    # Check for operation index
+    req.cookies.katt_operation or= @options.default.operation or 0
+    context.operationIndex = req.cookies.katt_operation
 
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
