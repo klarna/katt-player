@@ -154,9 +154,10 @@ module.exports = class LinearCheckEngine
       next()
 
 
-  sendError: (res, status, error) ->
+  sendError: (res, statusCode, error) ->
     res.set 'Content-Type', 'text/plain'
-    res.send status, error
+    res.set 'X-KATT-Error', 'true'
+    res.send statusCode, error
 
 
   validateRequest: (actualRequest, expectedRequest, vars = {}, result = []) ->
