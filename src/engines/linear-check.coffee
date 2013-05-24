@@ -14,7 +14,7 @@ GLOB_OPTIONS =
 module.exports = class LinearCheckEngine
   options: undefined
   _contexts: undefined
-  _modifyContext: -> # to please isak 2013-04-29 /andrei
+  _modifyContext: () ->
 
   constructor: (scenarios, options = {}) ->
     return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
