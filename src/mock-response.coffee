@@ -1,4 +1,4 @@
-module.exports = class MockRes
+module.exports = class MockResponse
   statusCode: undefined
   headers: undefined
   cookies: undefined

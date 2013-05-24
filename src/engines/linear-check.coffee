@@ -4,8 +4,8 @@ glob = require 'glob'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
 katt = require '../katt'
-MockRes = require '../MockRes'
-MockReq = require '../MockReq'
+MockResponse = require '../mock-response'
+MockRequest = require '../mock-request'
 
 
 GLOB_OPTIONS =
@@ -104,9 +104,9 @@ module.exports = class LinearCheckEngine
       mockedOperationIndex = context.operationIndex - 1
       for operationIndex in [currentOperationIndex..mockedOperationIndex]
         context.operationIndex = operationIndex
-        mockRes = @_mockPlayOperationIndex req, res
+        mockResponse = @_mockPlayOperationIndex req, res
 
-        return @sendError res, mockRes.statusCode, mockRes.body  if mockRes.getHeader 'x-katt-error'
+        return @sendError res, mockResponse.statusCode, mockResponse.body  if mockResponse.getHeader 'x-katt-error'
 
         nextOperationIndex = context.operationIndex + 1
         logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
@@ -114,14 +114,14 @@ module.exports = class LinearCheckEngine
 
         # Validate response, so that we can continue with the request
         result = []
-        @validateResponse mockRes, operation.request, context.vars, result
+        @validateResponse mockResponse, operation.request, context.vars, result
         if result.length
           result = JSON.stringify result, null, 2
           return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
 
-        # Remember mockRes cookies for next request
+        # Remember mockResponse cookies for next request
         do () ->
-          for key, value of mockRes.cookies
+          for key, value of mockResponse.cookies
             req.cookies[key] = value
 
       context.operationIndex = mockedOperationIndex + 1
@@ -133,7 +133,7 @@ module.exports = class LinearCheckEngine
   _mockPlayOperationIndex: (req, res) ->
     context = req.context
 
-    mockReq = new MockReq req
+    mockRequest = new MockRequest req
 
     nextOperationIndex = context.operationIndex + 1
     logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
@@ -142,17 +142,17 @@ module.exports = class LinearCheckEngine
       return @sendError res, 403,
         "Operation #{nextOperationIndex} has not been defined in blueprint file for #{context.scenario.filename}"
 
-    mockReq.method = operation.request.method
-    mockReq.url = @recallDeep operation.request.url, context.vars
-    mockReq.headers = @recallDeep(operation.request.headers, context.vars) or {}
-    mockReq.body = @recallDeep operation.request.body, context.vars
+    mockRequest.method = operation.request.method
+    mockRequest.url = @recallDeep operation.request.url, context.vars
+    mockRequest.headers = @recallDeep(operation.request.headers, context.vars) or {}
+    mockRequest.body = @recallDeep operation.request.body, context.vars
     # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
-    mockRes = new MockRes res
+    mockResponse = new MockResponse res
 
-    @_playOperationIndex mockReq, mockRes
+    @_playOperationIndex mockRequest, mockResponse
 
-    mockRes
+    mockResponse
 
 
   _playOperationIndex: (req, res) ->

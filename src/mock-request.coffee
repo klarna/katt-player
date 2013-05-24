@@ -1,4 +1,4 @@
-module.exports = class MockReq
+module.exports = class MockRequest
   method: undefined
   url: undefined
   headers: undefined
