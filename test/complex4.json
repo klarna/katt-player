@@ -1,0 +1,10 @@
+{
+    "shared": {
+        "challenge": {
+            "email": "test-rps@checkout.klarna.com"
+        },
+        "billing_address": {
+            "country": "swe"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "shared": {
+        "challenge": {
+            "email": "changed@checkout.klarna.com",
+            "postal_code": "11343"
+        },
+        "billing_address": {
+            "given_name": "Test",
+            "family_name": "Rps",
+            "street_address": "Norra Stationsgatan 61",
+            "postal_code": "11343",
+            "city": "Stockholm",
+            "country": "swe",
+            "email": "test-rps@checkout.klarna.com",
+            "phone": "070 *** ** 58"
+        },
+        "selected_payment_method": {
+            "id": "-1",
+            "type": "post_pay"
+        }
+    }
+}
