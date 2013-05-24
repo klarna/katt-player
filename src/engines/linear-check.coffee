@@ -102,19 +102,24 @@ module.exports = class LinearCheckEngine
         context.operationIndex = operationIndex
         mockRes = @_mockPlayOperationIndex req, res
 
-        return @sendError res, mockRes.statusCode, mockRes.body  if mockRes.headers['x-katt-error']
+        return @sendError res, mockRes.statusCode, mockRes.body  if mockRes.getHeader 'x-katt-error'
 
         nextOperationIndex = context.operationIndex + 1
         logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
         operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
 
+        # Validate response, so that we can continue with the request
         result = []
         @validateResponse mockRes, operation.request, context.vars, result
         if result.length
           result = JSON.stringify result, null, 2
           return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
 
-        # FIXME remember mockRes cookies for next request
+        # Remember mockRes cookies for next request
+        do () ->
+          for key, value of mockRes.cookies
+            req.cookies[key] = value
+
       context.operationIndex = mockedOperationIndex + 1
 
     # Play
@@ -127,21 +132,34 @@ module.exports = class LinearCheckEngine
     finalRes = undefined
 
     mockReq = _.pick req, 'context', 'sessionID', 'cookies'
-    # FIXME set method, body, url, headers
-    # FIXME special treat for cookies (amend)
+
+    nextOperationIndex = context.operationIndex + 1
+    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
+    operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
+    unless operation
+      return @sendError res, 403,
+        "Operation #{nextOperationIndex} has not been defined in blueprint file for #{context.scenario.filename}"
+
+    mockReq.method = operation.request.method
+    mockReq.url = @recallDeep operation.request.url, context.vars
+    mockReq.headers = @recallDeep(operation.request.headers, context.vars) or {}
+    mockReq.body = @recallDeep operation.request.body, context.vars
+    # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
     mockRes = {
       statusCode: undefined
       headers: {}
+      cookies: {}
       body: undefined
-      status: () ->
-        get
-      set: (header, value) ->
-        mockRes.headers[header.toLowerCase()] = value
+      status: () ->                 mockRes.statusCode
+      getHeader: (header) ->        mockRes.headers[header.toLowerCase()]
+      setHeader: (header, value) -> mockRes.headers[header.toLowerCase()] = value
+      cookie: (key, value) ->
+        mockRes.cookies[key] = value
       #write: () ->
       end: () ->
       send: (statusCode, body) ->
-        return  if result # or throw error ?
+        return  if finalRes # or throw error ?
         if typeof statusCode is 'number'
           res.statusCode = statusCode
         else
@@ -150,10 +168,8 @@ module.exports = class LinearCheckEngine
         res.body = body
         finalRes = res
     }
-    # FIXME set method, body, url, headers
-    # FIXME special treat for cookies (amend)
 
-    @_playOperationIndex req, res
+    @_playOperationIndex mockReq, mockRes
 
     finalRes
 
@@ -165,7 +181,6 @@ module.exports = class LinearCheckEngine
 
     nextOperationIndex = context.operationIndex + 1
     logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
-
     operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
     unless operation
       return @sendError res, 403,
@@ -186,7 +201,7 @@ module.exports = class LinearCheckEngine
     res.body = @recallDeep operation.response.body, context.vars
 
     res.status operation.response.status
-    res.set header, headerValue  for header, headerValue of headers
+    res.setHeader header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>
       res.body = JSON.stringify(res.body, null, 4)  if katt.isJsonBody res
@@ -213,9 +228,22 @@ module.exports = class LinearCheckEngine
 
 
   sendError: (res, statusCode, error) ->
-    res.set 'Content-Type', 'text/plain'
-    res.set 'X-KATT-Error', 'true'
+    res.setHeader 'Content-Type', 'text/plain'
+    res.setHeader 'X-KATT-Error', 'true'
     res.send statusCode, error
+
+
+  validateReqRes: (actualReqRes, expectedReqRes, vars = {}, result = []) ->
+    headerResult = []
+    headersResult = @options.check.headers ? katt.validateHeaders actualReqRes.headers, expectedReqRes.headers, vars
+    result = result.concat headersResult  if headersResult.length
+
+    actualRequestBody = katt.maybeJsonBody actualReqRes
+    bodyResult = []
+    bodyResult = @options.check.body ? katt.validateBody actualReqResBody, expectedReqRes.body, vars
+    result = result.concat bodyResult  if bodyResult.length
+
+    result
 
 
   validateRequest: (actualRequest, expectedRequest, vars = {}, result = []) ->
@@ -227,13 +255,16 @@ module.exports = class LinearCheckEngine
     methodResult = @options.check.method ? katt.validate 'method', actualRequest.method, expectedRequest.method, vars
     result = result.concat methodResult  if methodResult.length
 
-    headerResult = []
-    headersResult = @options.check.headers ? katt.validateHeaders actualRequest.headers, expectedRequest.headers, vars
-    result = result.concat headersResult  if headersResult.length
+    @validateReqRes actualRequest, expectedRequest, vars, result
 
-    actualRequestBody = katt.maybeJsonBody actualRequest
-    bodyResult = []
-    bodyResult = @options.check.body ? katt.validateBody actualRequestBody, expectedRequest.body, vars
-    result = result.concat bodyResult  if bodyResult.length
+    result
+
+
+  validateResponse: (actualResponse, expectedResponse, vars = {}, result = []) ->
+    statusCodeResult = []
+    statusCodeResult = katt.validate 'statusCode', actualResponse.statusCode, expectedResponse.statusCode, vars
+    result = result.concat statusCodeResult  if statusCodeResult.length
+
+    @validateReqRes actualResponse, expectedResponse, vars, result
 
     result

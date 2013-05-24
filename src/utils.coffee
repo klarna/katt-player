@@ -15,4 +15,7 @@ exports.express2Compatibility = (req, res, next) ->
       body = statusCode
     originalSend.call res, body
 
+  # Not express2compatibility, just convenience; should be kept when removing express dep
+  res.headers = res._headers
+
   next()
