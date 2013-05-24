@@ -70,8 +70,11 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
+    cookieScenario = req.cookie('katt_scenario') or @options.default.scenario
+    cookieOperation = req.cookie('katt_operation') or @options.default.operation
+
     # Check for scenario filename
-    scenarioFilename = req.cookies.katt_scenario or= @options.default.scenario
+    scenarioFilename = cookieScenario
 
     unless scenarioFilename
       res.clearCookie 'katt_scenario', path: '/'
@@ -94,8 +97,7 @@ module.exports = class LinearCheckEngine
     # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
     currentOperationIndex = context.operationIndex or 0
     # Check for operation index
-    req.cookies.katt_operation or= @options.default.operation or 0
-    context.operationIndex = parseInt req.cookies.katt_operation, 10
+    context.operationIndex = parseInt cookieOperation, 10
 
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
@@ -173,13 +175,13 @@ module.exports = class LinearCheckEngine
       result = JSON.stringify result, null, 2
       return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
-    res.cookie 'katt_scenario', context.scenario.filename, path: '/'
-    res.cookie 'katt_operation', context.operationIndex, path: '/'
+    res.cookies.set 'katt_scenario', context.scenario.filename, path: '/'
+    res.cookies.set 'katt_operation', context.operationIndex, path: '/'
 
     headers = @recallDeep(operation.response.headers, context.vars) or {}
     res.body = @recallDeep operation.response.body, context.vars
 
-    res.status operation.response.status
+    res.statusCode = operation.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>

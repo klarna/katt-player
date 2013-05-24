@@ -1,4 +1,4 @@
-express = require 'express'
+http = require 'http'
 katt = require './katt'
 utils = require './utils'
 
@@ -14,12 +14,8 @@ exports.getEngine = (name)           -> ENGINES[name]
 exports.getEngineNames =             -> Object.keys(ENGINES)
 
 exports.makeServer = (engine) ->
-  app = express()
+  app = http.createServer (req, res, next) ->
+    utils.express2Compatibility req, res
+    engine.middleware req, res, next
   app.engine = engine
-  app.use express.bodyParser()
-  app.use express.cookieParser()
-  app.use express.session
-    secret: 'Lorem ipsum dolor sit amet.'
-  app.use utils.express2Compatibility
-  app.use engine.middleware
   app
