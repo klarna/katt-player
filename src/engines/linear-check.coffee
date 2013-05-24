@@ -220,7 +220,7 @@ module.exports = class LinearCheckEngine
 
   sendError: (res, statusCode, error) ->
     res.setHeader 'Content-Type', 'text/plain'
-    res.setHeader 'X-KATT-Error', 'true'
+    res.setHeader 'X-KATT-Error', encodeURIComponent error.split('\n').shift()
     res.send statusCode, error
 
 
