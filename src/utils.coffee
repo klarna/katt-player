@@ -16,6 +16,7 @@ exports.express2Compatibility = (req, res, next) ->
     originalSend.call res, body
 
   # Not express2compatibility, just convenience; should be kept when removing express dep
+  # FIXME should add .cookies and .cookie()
   res.headers = res._headers
 
   next()

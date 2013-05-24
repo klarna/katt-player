@@ -2,8 +2,10 @@ fs = require 'fs'
 path = require 'path'
 glob = require 'glob'
 _ = require 'lodash'
-katt = require '../katt'
 blueprintParser = require 'katt-blueprint-parser'
+katt = require '../katt'
+MockRes = require '../MockRes'
+MockReq = require '../MockReq'
 
 
 GLOB_OPTIONS =
@@ -129,9 +131,7 @@ module.exports = class LinearCheckEngine
   _mockPlayOperationIndex: (req, res) ->
     context = req.context
 
-    finalRes = undefined
-
-    mockReq = _.pick req, 'context', 'sessionID', 'cookies'
+    mockReq = new MockReq req
 
     nextOperationIndex = context.operationIndex + 1
     logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
@@ -146,32 +146,11 @@ module.exports = class LinearCheckEngine
     mockReq.body = @recallDeep operation.request.body, context.vars
     # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
-    mockRes = {
-      statusCode: undefined
-      headers: {}
-      cookies: {}
-      body: undefined
-      status: () ->                 mockRes.statusCode
-      getHeader: (header) ->        mockRes.headers[header.toLowerCase()]
-      setHeader: (header, value) -> mockRes.headers[header.toLowerCase()] = value
-      cookie: (key, value) ->
-        mockRes.cookies[key] = value
-      #write: () ->
-      end: () ->
-      send: (statusCode, body) ->
-        return  if finalRes # or throw error ?
-        if typeof statusCode is 'number'
-          res.statusCode = statusCode
-        else
-          # no statusCode sent, just maybe body
-          body = statusCode
-        res.body = body
-        finalRes = res
-    }
+    mockRes = new MockRes res
 
     @_playOperationIndex mockReq, mockRes
 
-    finalRes
+    mockRes
 
 
   _playOperationIndex: (req, res) ->
