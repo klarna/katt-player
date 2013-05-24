@@ -97,13 +97,69 @@ module.exports = class LinearCheckEngine
 
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
-      # TODO run through currentOperationIndex+1 ... context.operationIndex
-      ###
-      - replay request (mock a req/res object or just abstract the functionality out of this middleware function)
-      - adjust context (operationIndex++)
-      ###
+      mockedOperationIndex = context.operationIndex - 1
+      for operationIndex in [currentOperationIndex..mockedOperationIndex]
+        context.operationIndex = operationIndex
+        mockRes = @_mockPlayOperationIndex req, res
 
-    req.context = context
+        return @sendError res, mockRes.statusCode, mockRes.body  if mockRes.headers['x-katt-error']
+
+        nextOperationIndex = context.operationIndex + 1
+        logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
+        operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
+
+        result = []
+        @validateResponse mockRes, operation.request, context.vars, result
+        if result.length
+          result = JSON.stringify result, null, 2
+          return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
+
+        # FIXME remember mockRes cookies for next request
+      context.operationIndex = mockedOperationIndex + 1
+
+    # Play
+    @_playOperationIndex req, res
+
+
+  _mockPlayOperationIndex: (req, res) ->
+    context = req.context
+
+    finalRes = undefined
+
+    mockReq = _.pick req, 'context', 'sessionID', 'cookies'
+    # FIXME set method, body, url, headers
+    # FIXME special treat for cookies (amend)
+
+    mockRes = {
+      statusCode: undefined
+      headers: {}
+      body: undefined
+      status: () ->
+        get
+      set: (header, value) ->
+        mockRes.headers[header.toLowerCase()] = value
+      #write: () ->
+      end: () ->
+      send: (statusCode, body) ->
+        return  if result # or throw error ?
+        if typeof statusCode is 'number'
+          res.statusCode = statusCode
+        else
+          # no statusCode sent, just maybe body
+          body = statusCode
+        res.body = body
+        finalRes = res
+    }
+    # FIXME set method, body, url, headers
+    # FIXME special treat for cookies (amend)
+
+    @_playOperationIndex req, res
+
+    finalRes
+
+
+  _playOperationIndex: (req, res) ->
+    context = req.context
 
     @_modifyContext req, res
 
@@ -136,6 +192,8 @@ module.exports = class LinearCheckEngine
       res.body = JSON.stringify(res.body, null, 4)  if katt.isJsonBody res
       res.send res.body
       @callHook 'postSend', req, res
+
+    true
 
 
   recallDeep: (value, vars) =>
