@@ -1,8 +1,7 @@
 Cookies = require 'cookies'
 
-# Maintain compatibility with express2
-exports.express2Compatibility = (req, res) ->
-  # Not express2compatibility, just convenience; should be kept when removing express dep
+# Convenience monkey patching
+exports.helperPatching = (req, res) ->
   req.cookies = res.cookies = new Cookies req, res
 
   req.cookie = res.cookie = (name, value, options) ->
