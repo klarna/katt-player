@@ -68,21 +68,21 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
-    UID = req.sessionID + (req.cookies.katt_scenario or @options.default.scenario)
-    context = req.context = @_contexts[UID] or {
-      UID
-      scenario: undefined
-      operationIndex: 0
-      vars: {}
-    }
-
     # Check for scenario filename
-    req.cookies.katt_scenario or= @options.default.scenario
-    scenarioFilename = req.cookies.katt_scenario
+    scenarioFilename = req.cookies.katt_scenario or= @options.default.scenario
+
     unless scenarioFilename
       res.clearCookie 'katt_scenario', path: '/'
       res.clearCookie 'katt_operation', path: '/'
       return @sendError res, 500, 'Please define a scenario'
+
+    UID = req.sessionID + " # " + scenarioFilename
+    context = req.context = @_contexts[UID] or (@_contexts[UID] = {
+      UID
+      scenario: undefined
+      operationIndex: 0
+      vars: {}
+    })
 
     # Check for scenario
     context.scenario = scenario = @scenariosByFilename[scenarioFilename]
@@ -93,7 +93,7 @@ module.exports = class LinearCheckEngine
     currentOperationIndex = context.operationIndex or 0
     # Check for operation index
     req.cookies.katt_operation or= @options.default.operation or 0
-    context.operationIndex = req.cookies.katt_operation
+    context.operationIndex = parseInt req.cookies.katt_operation, 10
 
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
