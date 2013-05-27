@@ -64,7 +64,7 @@ exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
 
 
 exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
-  if isPlainObjectOrArray actualValue and isPlainObjectOrArrayexpectedValue
+  if isPlainObjectOrArray(actualValue) and isPlainObjectOrArray(expectedValue)
     keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
     for key in keys
       if isPlainObjectOrArray expectedValue[key]
@@ -120,7 +120,7 @@ exports.store = (actualValue, expectedValue, vars = {}) ->
 
 
 exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
-  if isPlainObjectOrArray actualValue and isPlainObjectOrArray expectedValue
+  if isPlainObjectOrArray(actualValue) and isPlainObjectOrArray(expectedValue)
     keys = _.sortBy _.union _.keys(actualValue), _.keys(expectedValue)
     for key in keys
       if isPlainObjectOrArray expectedValue[key]
