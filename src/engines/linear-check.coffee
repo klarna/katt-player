@@ -150,7 +150,7 @@ module.exports = class LinearCheckEngine
     mockRequest.body = @recallDeep operation.request.body, context.vars
     # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
-    mockResponse = new MockResponse res
+    mockResponse = new MockResponse()
 
     @_playOperationIndex mockRequest, mockResponse
 

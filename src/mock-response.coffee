@@ -1,5 +1,3 @@
-_ = require 'lodash'
-
 module.exports = class MockResponse
   statusCode: undefined
   headers: undefined
@@ -7,14 +5,9 @@ module.exports = class MockResponse
   body: undefined
   finished: false
 
-  constructor: (res) ->
+  constructor: () ->
     @headers = {}
     @cookies = {}
-
-    return  unless res
-    @statusCode = res.statusCode
-    @headers = _.cloneDeep(res.headers) or {}
-    @body = res.body
 
 
   status: () ->
