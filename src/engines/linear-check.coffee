@@ -71,15 +71,15 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
-    cookieScenario = req.cookie('katt_scenario') or @options.default.scenario
-    cookieOperation = req.cookie('katt_operation') or @options.default.operation
+    cookieScenario = req.cookies.katt_scenario or @options.default.scenario
+    cookieOperation = req.cookies.katt_operation or @options.default.operation
 
     # Check for scenario filename
     scenarioFilename = cookieScenario
 
     unless scenarioFilename
-      res.clearCookie 'katt_scenario', path: '/'
-      res.clearCookie 'katt_operation', path: '/'
+      res.cookies.katt_scenario = undefined
+      res.cookies.katt_operation = undefined
       return @sendError res, 500, 'Please define a scenario'
 
     UID = req.sessionID + " # " + scenarioFilename
@@ -178,8 +178,8 @@ module.exports = class LinearCheckEngine
         result = JSON.stringify result, null, 2
         return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
-    res.cookies.set 'katt_scenario', context.scenario.filename, path: '/'
-    res.cookies.set 'katt_operation', context.operationIndex, path: '/'
+    res.cookies.katt_scenario = context.scenario.filename
+    res.cookies.katt_operation = context.operationIndex
 
     headers = @recallDeep(operation.response.headers, context.vars) or {}
     res.body = @recallDeep operation.response.body, context.vars

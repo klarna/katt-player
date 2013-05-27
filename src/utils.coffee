@@ -1,17 +1,9 @@
-Cookies = require 'cookies'
+cookie = require 'cookie'
 
 # Convenience monkey patching
-exports.helperPatching = (req, res) ->
-  req.cookies = res.cookies = new Cookies req, res
-
-  req.cookie = res.cookie = (name, value, options) ->
-    if arguments.length > 1
-      res.cookies.set name, value, options
-    else
-      req.cookies.get name
-
-  res.clearCookie = (name, options = {}) ->
-    @cookies.set name, null, options
+exports.helperPatching = (req, res, next) ->
+  req.cookies = cookie.parse req.headers.cookie
+  res.cookies = {}
 
   res.headers = res._headers or= {}
   res.send = (statusCode, body) ->
@@ -20,4 +12,8 @@ exports.helperPatching = (req, res) ->
     else
       # no statusCode sent, just maybe body
       body = statusCode
+
+    cookies = []
+    cookies.push cookie.serialize key, value, {}  for key, value of res.cookies
+    res.setHeader 'Set-Cookie', cookies
     @end body, 'utf-8'
