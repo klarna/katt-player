@@ -245,9 +245,9 @@ module.exports = class LinearCheckEngine
 
 
   validateResponse: (actualResponse, expectedResponse, vars = {}, result = []) ->
-    statusCodeResult = []
-    statusCodeResult = katt.validate 'statusCode', actualResponse.statusCode, expectedResponse.statusCode, vars
-    result = result.concat statusCodeResult  if statusCodeResult.length
+    statusResult = []
+    statusResult = katt.validate 'status', actualResponse.statusCode, expectedResponse.status, vars
+    result.push.apply result, statusResult  if statusResult.length
 
     @validateReqRes actualResponse, expectedResponse, vars, result
 

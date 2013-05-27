@@ -8,7 +8,7 @@ exports.helperPatching = (req, res, next) ->
   res.headers = res._headers or= {}
   res.send = (statusCode, body) ->
     if typeof statusCode is 'number'
-      res.statusCode = res.status = statusCode
+      res.statusCode = statusCode
     else
       # no statusCode sent, just maybe body
       body = statusCode
@@ -17,7 +17,6 @@ exports.helperPatching = (req, res, next) ->
     cookies.push cookie.serialize key, value, {}  for key, value of res.cookies
     res.setHeader 'Set-Cookie', cookies
 
-    res.statusCode ?= res.status
     @end body, 'utf-8'
 
   body = ''
