@@ -23,10 +23,16 @@ TAGS_RE = do () ->
   result[tagName] = regexEscape tag  for tagName, tag of TAGS
   result
 
-recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$", 'g'
-storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$", 'g'
-# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$", 'g'
-matchAnyRE = new RegExp TAGS_RE.MATCH_ANY, 'g'
+###
+FIXME
+Reference: http://stackoverflow.com/questions/11477415/why-does-javascripts-regex-exec-not-always-return-the-same-value
+Whenever KATT(js) is updated to support partial recalls, like KATT(erlang), careful with adding the g flag
+as you will need to set lastIndex to 0 on every new cycle
+###
+recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$" #, 'g'
+storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$" #, 'g'
+# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$" #, 'g'
+matchAnyRE = new RegExp TAGS_RE.MATCH_ANY #, 'g'
 
 #
 # API
