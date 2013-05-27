@@ -58,6 +58,7 @@ module.exports = class LinearCheckEngine
 
 
   loadScenarios: (scenarios) ->
+    scenarios = [scenarios]  unless _.isArray scenarios
     for scenario in scenarios
       continue  unless fs.existsSync scenario
       scenario = path.normalize scenario
@@ -169,11 +170,13 @@ module.exports = class LinearCheckEngine
 
     context.operationIndex = nextOperationIndex
 
-    result = []
-    @validateRequest req, operation.request, context.vars, result
-    if result.length
-      result = JSON.stringify result, null, 2
-      return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
+    if req.headers['x-katt-dont-validate']
+      result = []
+      @validateRequest req, operation.request, context.vars, result
+      console.log req, operation.request
+      if result.length
+        result = JSON.stringify result, null, 2
+        return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
     res.cookies.set 'katt_scenario', context.scenario.filename, path: '/'
     res.cookies.set 'katt_operation', context.operationIndex, path: '/'
