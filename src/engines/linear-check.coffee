@@ -219,25 +219,48 @@ module.exports = class LinearCheckEngine
 
   validateReqRes: (actualReqRes, expectedReqRes, vars = {}, result = []) ->
     headerResult = []
-    headersResult = @options.check.headers ? katt.validateHeaders actualReqRes.headers, expectedReqRes.headers, vars
-    result = result.concat headersResult  if headersResult.length
+    headersResult = katt.validateHeaders actualReqRes.headers, expectedReqRes.headers, vars  if @options.check.headers
+    result.push.apply result, headersResult  if headersResult.length
 
-    actualRequestBody = katt.maybeJsonBody actualReqRes
+    actualReqResBody = katt.maybeJsonBody actualReqRes
     bodyResult = []
-    bodyResult = @options.check.body ? katt.validateBody actualReqResBody, expectedReqRes.body, vars
-    result = result.concat bodyResult  if bodyResult.length
+    bodyResult = katt.validateBody actualReqResBody, expectedReqRes.body, vars  if @options.check.body
+    result.push.apply result, bodyResult  if bodyResult.length
+
+    result
+
+
+  validateRequestURI: (actualRequest, expectedRequest, vars = {}, result = []) ->
+    return result  unless @options.check.url
+
+    actualRequestUrl = actualRequest.url
+    actualRequestUrl = url.parse actualRequestUrl
+    actualRequestUrl.hostname ?= @server.hostname
+    actualRequestUrl.port ?= @server.port
+    actualRequestUrl.protocol ?= 'http'
+    actualRequestUrl = url.format actualRequestUrl
+
+    expectedRequestUrl = expectedRequest.url
+    expectedRequestUrl = katt.recall expectedRequestUrl, vars
+    expectedRequestUrl = url.parse expectedRequestUrl
+    expectedRequestUrl.hostname ?= @server.hostname
+    expectedRequestUrl.port ?= @server.port
+    expectedRequestUrl.protocol ?= 'http'
+    expectedRequestUrl = url.format expectedRequestUrl
+
+    urlResult = []
+    urlResult = katt.validate 'url', actualRequestUrl, expectedRequestUrl, vars
+    result.push.apply result, urlResult  if urlResult.length
 
     result
 
 
   validateRequest: (actualRequest, expectedRequest, vars = {}, result = []) ->
-    urlResult = []
-    urlResult = @options.check.url ? katt.validate 'url', actualRequest.url, expectedRequest.url, vars
-    result = result.concat urlResult  if urlResult.length
+    result = @validateRequestURI actualRequest, expectedRequest, vars, result
 
     methodResult = []
-    methodResult = @options.check.method ? katt.validate 'method', actualRequest.method, expectedRequest.method, vars
-    result = result.concat methodResult  if methodResult.length
+    methodResult = katt.validate 'method', actualRequest.method, expectedRequest.method, vars  if @options.check.method
+    result.push.apply result, methodResult  if methodResult.length
 
     @validateReqRes actualRequest, expectedRequest, vars, result
 

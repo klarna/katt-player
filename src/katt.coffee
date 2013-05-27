@@ -64,9 +64,14 @@ exports.validate = (key, actualValue, expectedValue, vars = {}, result = []) ->
   expectedValue = exports.recall expectedValue, vars
 
   return result  if actualValue is expectedValue
-  return result.concat [['missing_value', key, actualValue, expectedValue]]  unless actualValue?
-  return result.concat [['empty_value', key, actualValue, expectedValue]]  if storeRE.test actualValue
-  result.concat [['not_equal', key, actualValue, expectedValue]]
+  unless actualValue?
+    result.push.apply result, [['missing_value', key, actualValue, expectedValue]]
+    return result
+  if storeRE.test actualValue
+    result.push.apply result, [['empty_value', key, actualValue, expectedValue]]
+    return result
+  result.push.apply result, [['not_equal', key, actualValue, expectedValue]]
+  result
 
 
 exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
