@@ -1,5 +1,6 @@
 fs = require 'fs'
 path = require 'path'
+url = require 'url'
 glob = require 'glob'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
@@ -109,13 +110,13 @@ module.exports = class LinearCheckEngine
 
         return @sendError res, mockResponse.statusCode, mockResponse.body  if mockResponse.getHeader 'x-katt-error'
 
-        nextOperationIndex = context.operationIndex + 1
+        nextOperationIndex = context.operationIndex
         logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
         operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
 
         # Validate response, so that we can continue with the request
         result = []
-        @validateResponse mockResponse, operation.request, context.vars, result
+        @validateResponse mockResponse, operation.response, context.vars, result
         if result.length
           result = JSON.stringify result, null, 2
           return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
@@ -171,9 +172,19 @@ module.exports = class LinearCheckEngine
     context.operationIndex = nextOperationIndex
 
     if req.headers['x-katt-dont-validate']
+      # maybe the request target has changed during the skipped operations
+      if operation.response.headers.location
+        intendedUrl = katt.recall operation.response.headers.location, context.vars
+        res.setHeader 'content-location', intendedUrl
+      else
+        result = []
+        @validateRequestURI req, operation.request, context.vars, result
+        if result?[0]?[0] is 'not_equal'
+          intendedUrl = result[0][3]
+          res.setHeader 'content-location', intendedUrl
+    else
       result = []
       @validateRequest req, operation.request, context.vars, result
-      console.log req, operation.request
       if result.length
         result = JSON.stringify result, null, 2
         return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"

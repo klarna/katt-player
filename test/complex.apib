@@ -9,7 +9,6 @@ POST /checkout/orders
 > Accept: application/vnd.klarna.checkout.aggregated-order-v2+json
 > Authorization: Klarna NU4c2f8JaISv1yNioTS/HNc27uqY7m2S0yDKxkiBGGM=
 > Content-Type: application/vnd.klarna.checkout.aggregated-order-v2+json
-> User-Agent: Klarna TEST
 {
     "cart": {
         "items": [
@@ -117,7 +116,6 @@ GET {{<order_uri}}
 GET {{<order_uri}}
 > Accept: application/vnd.klarna.checkout.server-order-v1+json
 > Authorization: KlarnaCheckout sargantana
-> User-Agent: Klarna TEST
 < 200
 < Cache-Control: max-age=0, no-cache, no-store
 < Content-Type: application/vnd.klarna.checkout.server-order-v1+json
@@ -156,7 +154,6 @@ POST {{<order_uri}}
 > Accept: application/vnd.klarna.checkout.server-order-v1+json
 > Authorization: KlarnaCheckout sargantana
 > Content-Type: application/vnd.klarna.checkout.client-order-v1+json
-> User-Agent: Klarna TEST
 {
     "shared": {
         "challenge": {
@@ -207,7 +204,6 @@ POST {{<order_uri}}
 > Accept: application/vnd.klarna.checkout.server-order-v1+json
 > Authorization: KlarnaCheckout sargantana
 > Content-Type: application/vnd.klarna.checkout.client-order-v1+json
-> User-Agent: Klarna TEST
 {
     "shared": {
         "challenge": {
@@ -274,7 +270,6 @@ POST {{<order_uri}}
 > Accept: application/vnd.klarna.checkout.server-order-v1+json
 > Authorization: KlarnaCheckout sargantana
 > Content-Type: application/vnd.klarna.checkout.client-order-v1+json
-> User-Agent: Klarna TEST
 {
     "shared": {
         "challenge": {

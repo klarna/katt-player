@@ -1,3 +1,5 @@
+_ = require 'lodash'
+
 module.exports = class MockResponse
   statusCode: undefined
   headers: undefined
@@ -11,8 +13,7 @@ module.exports = class MockResponse
 
     return  unless res
     @statusCode = res.statusCode
-    @headers = res.headers or {}
-    @cookies = res.cookies or {} # FIXME not part of vanilla NodeJS serverResponse
+    @headers = _.cloneDeep(res.headers) or {}
     @body = res.body
 
 
