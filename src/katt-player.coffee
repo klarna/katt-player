@@ -15,7 +15,7 @@ exports.getEngineNames =             -> Object.keys(ENGINES)
 
 exports.makeServer = (engine) ->
   app = http.createServer (req, res, next) ->
-    utils.helperPatching req, res
-    engine.middleware req, res, next
+    utils.helperPatching req, res, () ->
+      engine.middleware req, res, next
   app.engine = engine
   app
