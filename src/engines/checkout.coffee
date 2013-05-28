@@ -32,7 +32,9 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
   _modifyContext: (req, res, next) ->
     context = req.context
     id = md5 req.context.UID
-    context.vars.order_uri = "http://#{@server.hostname}:#{@server.port}/checkout/orders/#{id}"
+    hostname = @server.hostname or req.headers.host
+    port = @server.port
+    context.vars.order_uri = "http://#{hostname}:#{port}/checkout/orders/#{id}"
 
 
   _MT: (name) ->

@@ -173,15 +173,11 @@ module.exports = class LinearCheckEngine
 
     if req.headers['x-katt-dont-validate']
       # maybe the request target has changed during the skipped operations
-      if operation.response.headers.location
-        intendedUrl = katt.recall operation.response.headers.location, context.vars
+      result = []
+      @validateRequestURI req, operation.request, context.vars, result
+      if result?[0]?[0] is 'not_equal'
+        intendedUrl = result[0][3]
         res.setHeader 'content-location', intendedUrl
-      else
-        result = []
-        @validateRequestURI req, operation.request, context.vars, result
-        if result?[0]?[0] is 'not_equal'
-          intendedUrl = result[0][3]
-          res.setHeader 'content-location', intendedUrl
     else
       result = []
       @validateRequest req, operation.request, context.vars, result

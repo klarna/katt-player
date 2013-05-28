@@ -2,7 +2,8 @@ cookie = require 'cookie'
 
 # Convenience monkey patching
 exports.helperPatching = (req, res, next) ->
-  req.cookies = cookie.parse req.headers.cookie
+  req.cookies = {}
+  req.cookies = cookie.parse req.headers.cookie  if req.headers.cookie
   res.cookies = {}
 
   res.headers = res._headers or= {}
