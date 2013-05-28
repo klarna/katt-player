@@ -88,7 +88,7 @@ module.exports = class LinearCheckEngine
       UID
       scenario: undefined
       operationIndex: 0
-      vars: {}
+      vars: @options.vars or {}
     })
 
     # Check for scenario
@@ -242,16 +242,16 @@ module.exports = class LinearCheckEngine
 
     actualRequestUrl = actualRequest.url
     actualRequestUrl = url.parse actualRequestUrl
-    actualRequestUrl.hostname ?= @server.hostname
-    actualRequestUrl.port ?= @server.port
+    actualRequestUrl.hostname ?= @options.hostname
+    actualRequestUrl.port ?= @options.port
     actualRequestUrl.protocol ?= 'http'
     actualRequestUrl = url.format actualRequestUrl
 
     expectedRequestUrl = expectedRequest.url
     expectedRequestUrl = katt.recall expectedRequestUrl, vars
     expectedRequestUrl = url.parse expectedRequestUrl
-    expectedRequestUrl.hostname ?= @server.hostname
-    expectedRequestUrl.port ?= @server.port
+    expectedRequestUrl.hostname ?= @options.hostname
+    expectedRequestUrl.port ?= @options.port
     expectedRequestUrl.protocol ?= 'http'
     expectedRequestUrl = url.format expectedRequestUrl
 
