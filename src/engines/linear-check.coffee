@@ -127,6 +127,7 @@ module.exports = class LinearCheckEngine
             req.cookies[key] = value
 
       context.operationIndex = mockedOperationIndex + 1
+      @_maybeSetContentLocation req, res
 
     # Play
     @_playOperationIndex req, res
@@ -157,6 +158,17 @@ module.exports = class LinearCheckEngine
     mockResponse
 
 
+  _maybeSetContentLocation: (req, res) ->
+    context = req.context
+    operation = context.scenario.blueprint.operations[context.operationIndex]
+
+    # maybe the request target has changed during the skipped operations
+    result = katt.validateURL req.url, operation.request.url, context.vars
+    if result?[0]?[0] is 'not_equal'
+      intendedUrl = result[0][3]
+      res.setHeader 'content-location', intendedUrl
+
+
   _playOperationIndex: (req, res) ->
     context = req.context
 
@@ -172,12 +184,7 @@ module.exports = class LinearCheckEngine
     context.operationIndex = nextOperationIndex
 
     if req.headers['x-katt-dont-validate']
-      # maybe the request target has changed during the skipped operations
-      result = []
-      @validateRequestURI req, operation.request, context.vars, result
-      if result?[0]?[0] is 'not_equal'
-        intendedUrl = result[0][3]
-        res.setHeader 'content-location', intendedUrl
+      @_maybeSetContentLocation req, res
     else
       result = []
       @validateRequest req, operation.request, context.vars, result
@@ -237,37 +244,14 @@ module.exports = class LinearCheckEngine
     result
 
 
-  validateRequestURI: (actualRequest, expectedRequest, vars = {}, result = []) ->
-    return result  unless @options.check.url
-
-    actualRequestUrl = actualRequest.url
-    actualRequestUrl = url.parse actualRequestUrl
-    actualRequestUrl.hostname ?= @options.hostname
-    actualRequestUrl.port ?= @options.port
-    actualRequestUrl.protocol ?= 'http'
-    actualRequestUrl = url.format actualRequestUrl
-
-    expectedRequestUrl = expectedRequest.url
-    expectedRequestUrl = katt.recall expectedRequestUrl, vars
-    expectedRequestUrl = url.parse expectedRequestUrl
-    expectedRequestUrl.hostname ?= @options.hostname
-    expectedRequestUrl.port ?= @options.port
-    expectedRequestUrl.protocol ?= 'http'
-    expectedRequestUrl = url.format expectedRequestUrl
-
-    urlResult = []
-    urlResult = katt.validate 'url', actualRequestUrl, expectedRequestUrl, vars
-    result.push.apply result, urlResult  if urlResult.length
-
-    result
-
-
   validateRequest: (actualRequest, expectedRequest, vars = {}, result = []) ->
-    result = @validateRequestURI actualRequest, expectedRequest, vars, result
-
     methodResult = []
     methodResult = katt.validate 'method', actualRequest.method, expectedRequest.method, vars  if @options.check.method
     result.push.apply result, methodResult  if methodResult.length
+
+    urlResult = []
+    urlResult = katt.validateURL actualRequest.url, expectedRequest.url, vars
+    result.push.apply result, urlResult  if urlResult.length
 
     @validateReqRes actualRequest, expectedRequest, vars, result
 

@@ -1,4 +1,5 @@
 fs = require 'fs'
+url = require 'url'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
 
@@ -52,8 +53,28 @@ exports.maybeJsonBody = (reqres) ->
 
 exports.normalizeHeaders = (headers) ->
   result = {}
-  result[name.trim().toLowerCase()] = value  for name, value of headers
+  for name, value of headers
+    # Lowercase names
+    name = name.trim().toLowerCase()
+    # Ignore charset param in Content-Type headers
+    if name is 'content-type'
+      value = value.replace /;\s*charset=[^\s;]+\s*/, ''
+    result[name] = value
   result
+
+
+exports.normalizeURL = (URL, vars = {}) ->
+  result = url.parse URL
+  if result.hostname is vars.hostname and result.port is vars.port.toString()
+    delete result.protocol
+    delete result.slashes
+    delete result.hostname
+    delete result.host
+    delete result.port
+    result = url.format result
+    result
+  else
+    URL
 
 
 # VALIDATE
@@ -87,9 +108,20 @@ exports.validateDeep = (key, actualValue, expectedValue, vars, result) ->
     exports.validate key, actualValue, expectedValue, vars, result
 
 
+exports.validateURL = (actualURL, expectedURL, vars = {}) ->
+  result = []
+  actualURL = exports.normalizeURL actualURL, vars
+  expectedURL = exports.recall expectedURL, vars
+  expectedURL = exports.normalizeURL expectedURL, vars
+
+  exports.validate 'url', actualURL, expectedURL, vars, result
+  result
+
+
 exports.validateHeaders = (actualHeaders, expectedHeaders, vars = {}) ->
   result = []
   actualHeaders = exports.normalizeHeaders actualHeaders
+  expectedHeaders = exports.recallDeep expectedHeaders, vars
   expectedHeaders = exports.normalizeHeaders expectedHeaders
 
   for header of expectedHeaders

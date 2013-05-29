@@ -63,8 +63,9 @@ parseArgs = (args) ->
 main = exports.main = (args = process.args) ->
   args = parseArgs(args)
   {hostname, port} = args
-  options = _.merge({hostname, port}, args.engineOptions)
-  engine = new args.engine(args.scenarios, options)
+  args.engineOptions.vars ?= {}
+  _.merge args.engineOptions, {vars: {hostname, port}}
+  engine = new args.engine(args.scenarios, args.engineOptions)
   kattPlayer.makeServer(engine).listen port, hostname, ->
     console.log "Server started on http://#{hostname}:#{port}"
 
