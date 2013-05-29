@@ -24,16 +24,10 @@ TAGS_RE = do () ->
   result[tagName] = regexEscape tag  for tagName, tag of TAGS
   result
 
-###
-FIXME
-Reference: http://stackoverflow.com/questions/11477415/why-does-javascripts-regex-exec-not-always-return-the-same-value
-Whenever KATT(js) is updated to support partial recalls, like KATT(erlang), careful with adding the g flag
-as you will need to set lastIndex to 0 on every new cycle
-###
-recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$" #, 'g'
-storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$" #, 'g'
-# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$" #, 'g'
-matchAnyRE = new RegExp TAGS_RE.MATCH_ANY #, 'g'
+# recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$"
+storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$"
+# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$"
+matchAnyRE = new RegExp TAGS_RE.MATCH_ANY
 
 #
 # API
@@ -178,10 +172,11 @@ exports.storeDeep = (actualValue, expectedValue, vars = {}) ->
 # RECALL
 exports.recall = (expectedValue, vars = {}) ->
   return expectedValue  unless _.isString expectedValue
-  return expectedValue  unless recallRE.test expectedValue
-  expectedValue = expectedValue.replace TAGS.RECALL_BEGIN, ''
-  expectedValue = expectedValue.replace TAGS.RECALL_END, ''
-  vars[expectedValue]
+  for key, value of vars
+    keyRE = regexEscape key
+    keyRE = new RegExp "#{TAGS_RE.RECALL_BEGIN}#{keyRE}#{TAGS_RE.RECALL_END}", 'g'
+    expectedValue = expectedValue.replace keyRE, value
+  expectedValue
 
 
 exports.recallDeep = (expectedValue, vars = {}) ->
