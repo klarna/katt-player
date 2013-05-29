@@ -86,11 +86,23 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
 
 
   _preSendHook: (req, res, next) =>
+    return next()  unless @_preSendHooks?.length
     hookIndex = -1
     nextHook = (err) =>
       hookIndex += 1
       return next()  if hookIndex + 1 > @_preSendHooks.length
       fun = @_preSendHooks[hookIndex]
+      fun.call @, req, res, nextHook
+    nextHook()
+
+
+  _postSendHook: (req, res, next) =>
+    return next()  unless @_postSendHooks?.length
+    hookIndex = -1
+    nextHook = (err) =>
+      hookIndex += 1
+      return next()  if hookIndex + 1 > @_postSendHooks.length
+      fun = @_postSendHooks[hookIndex]
       fun.call @, req, res, nextHook
     nextHook()
 
@@ -106,8 +118,4 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
         allow_separate_shipping_address: @_contexts.vars.allow_separate_shipping_address
       gui:
         snippet: @_makeSnippet req, res
-    next()
-
-
-  _postSendHook: (req, res, next) =>
     next()
