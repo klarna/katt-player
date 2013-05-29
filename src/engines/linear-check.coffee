@@ -105,6 +105,9 @@ module.exports = class LinearCheckEngine
     # Check for operation index
     context.operationIndex = parseInt operationIndex, 10
 
+    # FIXME if context.operationIndex < currentOperationIndex, then it means we went back in time
+    # and it might be better to clear the context.vars
+
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
       mockedOperationIndex = context.operationIndex - 1
@@ -137,6 +140,17 @@ module.exports = class LinearCheckEngine
     @_playOperationIndex req, res
 
 
+  _maybeSetContentLocation: (req, res) ->
+    context = req.context
+    operation = context.scenario.blueprint.operations[context.operationIndex]
+
+    # maybe the request target has changed during the skipped operations
+    result = katt.validateURL req.url, operation.request.url, context.vars
+    if result?[0]?[0] is 'not_equal'
+      intendedUrl = result[0][3]
+      res.setHeader 'content-location', intendedUrl
+
+
   _mockPlayOperationIndex: (req, res) ->
     context = req.context
 
@@ -160,17 +174,6 @@ module.exports = class LinearCheckEngine
     @_playOperationIndex mockRequest, mockResponse
 
     mockResponse
-
-
-  _maybeSetContentLocation: (req, res) ->
-    context = req.context
-    operation = context.scenario.blueprint.operations[context.operationIndex]
-
-    # maybe the request target has changed during the skipped operations
-    result = katt.validateURL req.url, operation.request.url, context.vars
-    if result?[0]?[0] is 'not_equal'
-      intendedUrl = result[0][3]
-      res.setHeader 'content-location', intendedUrl
 
 
   _playOperationIndex: (req, res) ->

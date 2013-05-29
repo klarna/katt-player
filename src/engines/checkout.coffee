@@ -29,6 +29,23 @@ module.exports = class CheckoutEngine extends LinearCheckEngine
     , @options.vars
 
 
+  middleware: (req, res, next) ->
+    ###
+    scenarioFilename = req.cookies.katt_scenario or @options.default.scenario
+    scenario = @scenariosByFilename[scenarioFilename]
+
+    if scenario
+      # FIXME placeholder for interpreting semantic katt_operation values
+      # Eg. if thankyou then
+      #     set req.cookies.katt_operation to the operationIndex that has the FIRST redirect_uri in response body
+      #     set to 0, otherwise
+      # Eg. if settlement then
+      #     set req.cookies.katt_operation to the operationIndex that has the SECOND redirect_uri in response body
+      #     set to 0 otherwise
+    ###
+    super
+
+
   _modifyContext: (req, res, next) ->
     context = req.context
     id = md5 req.context.UID
