@@ -74,6 +74,7 @@ module.exports = class LinearCheckEngine
   middleware: (req, res, next) =>
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
     cookieOperation = req.cookies.katt_operation or @options.default.operation
+    [operationIndex, resetToOperationIndex] = String(cookieOperation).split '|'
 
     # Check for scenario filename
     scenarioFilename = cookieScenario
@@ -97,9 +98,12 @@ module.exports = class LinearCheckEngine
       return @sendError res, 500, "Unknown scenario with filename #{scenarioFilename}"
 
     # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
-    currentOperationIndex = context.operationIndex or 0
+    if resetToOperationIndex?
+      currentOperationIndex = parseInt resetToOperationIndex, 10
+    else
+      currentOperationIndex = context.operationIndex
     # Check for operation index
-    context.operationIndex = parseInt cookieOperation, 10
+    context.operationIndex = parseInt operationIndex, 10
 
     # Check if we're FFW operations
     if context.operationIndex > currentOperationIndex
