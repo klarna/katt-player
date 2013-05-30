@@ -24,10 +24,31 @@ TAGS_RE = do () ->
   result[tagName] = regexEscape tag  for tagName, tag of TAGS
   result
 
-# recallRE = new RegExp "^#{TAGS_RE.RECALL_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.RECALL_END}$"
-storeRE = new RegExp "^#{TAGS_RE.STORE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.STORE_END}$"
-# subRE = new RegExp "^#{TAGS_RE.SUBE_BEGIN}[^#{TAGS_RE.MARKER_END}]+#{TAGS_RE.SUBE_END}$"
-matchAnyRE = new RegExp TAGS_RE.MATCH_ANY
+###
+recallRE = ///
+  ^#{TAGS_RE.RECALL_BEGIN}
+  [^#{TAGS_RE.MARKER_END}]+
+  #{TAGS_RE.RECALL_END}$
+///
+###
+
+storeRE = ///
+  ^#{TAGS_RE.STORE_BEGIN}
+  [^#{TAGS_RE.MARKER_END}]+
+  #{TAGS_RE.STORE_END}$
+///
+
+###
+subRE = ///
+  ^#{TAGS_RE.SUBE_BEGIN}
+  [^#{TAGS_RE.MARKER_END}]+
+  #{TAGS_RE.SUBE_END}$
+///
+###
+
+matchAnyRE = ///
+  #{TAGS_RE.MATCH_ANY}
+///
 
 #
 # API

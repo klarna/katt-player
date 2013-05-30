@@ -14,8 +14,7 @@ exports.helperPatching = (req, res, next) ->
       # no statusCode sent, just maybe body
       body = statusCode
 
-    cookies = []
-    cookies.push cookie.serialize key, value, {path:'/'}  for key, value of res.cookies
+    cookies = (cookie.serialize key, value, {path:'/'}  for key, value of res.cookies)
     res.setHeader 'Set-Cookie', cookies
 
     @end body, 'utf-8'

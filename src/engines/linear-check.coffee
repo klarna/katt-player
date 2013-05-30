@@ -74,7 +74,7 @@ module.exports = class LinearCheckEngine
   middleware: (req, res, next) =>
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
     cookieOperation = req.cookies.katt_operation or @options.default.operation
-    [operationIndex, resetToOperationIndex] = String(cookieOperation).split '|'
+    [operationIndex, resetToOperationIndex] = "#{cookieOperation}".split '|'
 
     # Check for scenario filename
     scenarioFilename = cookieScenario
