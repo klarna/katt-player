@@ -15,6 +15,7 @@ exports.getEngineNames =             -> Object.keys ENGINES
 
 exports.makeServer = (engine) ->
   app = http.createServer (req, res, next) ->
+    # CORS
     if req.method is 'OPTIONS'
       res.statusCode = 200
       res.setHeader 'Access-Control-Allow-Origin', do () ->
@@ -33,6 +34,7 @@ exports.makeServer = (engine) ->
       res.setHeader 'Access-Control-Max-Age', '0'
       res.end ''
       return
+
     utils.helperPatching req, res, () ->
       engine.middleware req, res, next
   app.engine = engine

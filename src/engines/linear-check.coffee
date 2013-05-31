@@ -72,6 +72,20 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
+    # FIXME better idea? proxies might rewrite the path
+    if /scenarios\.json/.test req.url
+      @middleware_json req, res, next
+    else
+      @middleware_scenario req, res, next
+
+
+  middleware_json: (req, res, next) ->
+    res.setHeader 'Content-Type', 'application/json'
+    res.body = JSON.stringify @scenariosByFilename, null, 4
+    res.send 200, res.body
+
+
+  middleware_scenario: (req, res, next) ->
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
     cookieOperation = req.cookies.katt_operation or @options.default.operation
     [operationIndex, resetToOperationIndex] = "#{cookieOperation}".split '|'
