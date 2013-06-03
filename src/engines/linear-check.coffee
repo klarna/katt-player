@@ -41,9 +41,6 @@ module.exports = class LinearCheckEngine
         headers: true
         body: true
     }
-    @server =
-      hostname: options.hostname
-      port: options.port
     @loadScenarios scenarios
 
 
@@ -87,7 +84,7 @@ module.exports = class LinearCheckEngine
 
   middleware_scenario: (req, res, next) ->
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
-    cookieOperation = req.cookies.katt_operation or @options.default.operation
+    cookieOperation = decodeURIComponent(req.cookies.katt_operation) or @options.default.operation
     [operationIndex, resetToOperationIndex] = "#{cookieOperation}".split '|'
 
     # Check for scenario filename
@@ -98,12 +95,15 @@ module.exports = class LinearCheckEngine
       res.cookies.katt_operation = undefined
       return @sendError res, 500, 'Please define a scenario'
 
-    UID = req.sessionID + " # " + scenarioFilename
+    sessionID = res.cookies.katt_session_id = req.cookies.katt_session_id or (new Date().getTime())
+
+    UID = sessionID + " # " + scenarioFilename
     context = req.context = @_contexts[UID] or (@_contexts[UID] = {
       UID
       scenario: undefined
       operationIndex: 0
-      vars: @options.vars or {}
+      vars: _.merge {}, @options.vars or {},
+        katt.getHost req.headers.host
     })
 
     # Check for scenario
@@ -148,7 +148,7 @@ module.exports = class LinearCheckEngine
             req.cookies[key] = value
 
       context.operationIndex = mockedOperationIndex + 1
-      @_maybeSetContentLocation req, res
+      req.url = @recallDeep context.scenario.blueprint.operations[nextOperationIndex].request.url, context.vars
 
     # Play
     res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']

@@ -80,7 +80,9 @@ exports.normalizeHeaders = (headers) ->
 
 exports.normalizeURL = (URL, vars = {}) ->
   result = url.parse URL
-  if result.hostname is vars.hostname and result.port is vars.port.toString()
+  sameHostname = (result.hostname is vars.hostname)
+  samePort = not vars.port or (result.port is vars.port.toString())
+  if sameHostname and samePort
     delete result.protocol
     delete result.slashes
     delete result.hostname
@@ -90,6 +92,15 @@ exports.normalizeURL = (URL, vars = {}) ->
     result
   else
     URL
+
+
+exports.getHost = (host) ->
+  [hostname, port] = host.split ':'
+  {
+    host
+    hostname
+    port
+  }
 
 
 # VALIDATE
