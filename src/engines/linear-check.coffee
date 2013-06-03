@@ -159,6 +159,8 @@ module.exports = class LinearCheckEngine
     context = req.context
     operation = context.scenario.blueprint.operations[context.operationIndex]
 
+    return  unless operation
+
     # maybe the request target has changed during the skipped operations
     result = katt.validateURL req.url, operation.request.url, context.vars
     if result?[0]?[0] is 'not_equal'
