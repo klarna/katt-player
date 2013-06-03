@@ -81,7 +81,7 @@ module.exports = class LinearCheckEngine
 
   middleware_json: (req, res, next) ->
     res.setHeader 'Content-Type', 'application/json'
-    res.body = JSON.stringify @scenariosByFilename, null, 4
+    res.body = JSON.stringify @scenariosByFilename, null, 2
     res.send 200, res.body
 
 
@@ -223,7 +223,7 @@ module.exports = class LinearCheckEngine
     res.setHeader header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>
-      res.body = JSON.stringify(res.body, null, 4)  if katt.isJsonBody res
+      res.body = JSON.stringify(res.body, null, 2)  if katt.isJsonBody res
       res.send res.body
       @callHook 'postSend', req, res
 
