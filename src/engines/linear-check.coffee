@@ -151,6 +151,7 @@ module.exports = class LinearCheckEngine
       @_maybeSetContentLocation req, res
 
     # Play
+    res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']
     @_playOperationIndex req, res
 
 
@@ -190,6 +191,12 @@ module.exports = class LinearCheckEngine
     mockResponse
 
 
+  _dontValidate: (req, res) ->
+    header = req.headers['x-katt-dont-validate']
+    cookie = req.cookies['x-katt-dont-validate']
+    header or cookie
+
+
   _playOperationIndex: (req, res) ->
     context = req.context
 
@@ -204,7 +211,7 @@ module.exports = class LinearCheckEngine
 
     context.operationIndex = nextOperationIndex
 
-    if req.headers['x-katt-dont-validate']
+    if @_dontValidate req, res
       @_maybeSetContentLocation req, res
     else
       result = []
