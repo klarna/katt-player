@@ -1,6 +1,6 @@
 http = require 'http'
 url = require 'url'
-katt = require './katt'
+katt = require 'katt'
 utils = require './utils'
 
 ENGINES =

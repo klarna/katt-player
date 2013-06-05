@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "gitosis@git.internal.machines:zz/andrei.neculau/katt-player.git"
+    "url": "gitosis@git.internal.machines:katt-player.git"
   },
   "keywords": [
     "katt",
@@ -25,7 +25,8 @@
     "node": ">=0.8.21"
   },
   "dependencies": {
-    "coffee-script": "~1.6.2",
+    "coffee-script": "~1.6.3",
+    "katt-js": "git+ssh://gitosis@git.internal.machines:katt-js.git",
     "katt-blueprint-parser": "~1.0.3",
     "argparse": "~0.1.13",
     "glob": "~3.1.21",
