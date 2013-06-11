@@ -70,7 +70,7 @@ module.exports = class LinearCheckEngine
 
   middleware: (req, res, next) =>
     # FIXME better idea? proxies might rewrite the path
-    if /scenarios\.json/.test req.url
+    if /katt_scenarios\.json/.test req.url
       @middleware_json req, res, next
     else
       @middleware_scenario req, res, next
