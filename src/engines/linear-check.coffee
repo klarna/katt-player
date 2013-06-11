@@ -4,7 +4,7 @@ url = require 'url'
 glob = require 'glob'
 _ = require 'lodash'
 blueprintParser = require 'katt-blueprint-parser'
-katt = require katt'
+katt = require 'katt'
 MockResponse = require '../mock-response'
 MockRequest = require '../mock-request'
 
