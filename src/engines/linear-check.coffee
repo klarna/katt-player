@@ -112,13 +112,13 @@ module.exports = class LinearCheckEngine
     sessionID = res.cookies.katt_session_id = req.cookies.katt_session_id or (new Date().getTime())
 
     UID = sessionID + " # " + scenarioFilename
-    context = req.context = @_contexts[UID] or (@_contexts[UID] = {
+    context = req.context = @_contexts[UID] ?= {
       UID
       scenario: undefined
       operationIndex: 0
       vars: _.merge {}, @options.vars or {},
         katt.getHost req.headers.host
-    })
+    }
 
     # Check for scenario
     context.scenario = scenario = @scenariosByFilename[scenarioFilename]
