@@ -31,7 +31,7 @@ GLOB_OPTIONS =
 module.exports = class LinearCheckEngine
   options: undefined
   _contexts: undefined
-  _modifyContext: () ->
+  _playOperationIndex_modifyContext: () ->
 
   constructor: (scenarios, options = {}) ->
     return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
@@ -216,7 +216,7 @@ module.exports = class LinearCheckEngine
   _playOperationIndex: (req, res) ->
     context = req.context
 
-    @_modifyContext req, res
+    @_playOperationIndex_modifyContext req, res
 
     nextOperationIndex = context.operationIndex + 1
     logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
