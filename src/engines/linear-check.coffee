@@ -121,7 +121,7 @@ module.exports = class LinearCheckEngine
     }
 
     # Check for scenario
-    context.scenario = scenario = @scenariosByFilename[scenarioFilename]
+    context.scenario = scenario = @_findScenarioByFilename scenarioFilename
     unless scenario?
       return @sendError res, 500, "Unknown scenario with filename #{scenarioFilename}"
 
@@ -167,6 +167,15 @@ module.exports = class LinearCheckEngine
     # Play
     res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']
     @_playOperationIndex req, res
+
+
+  _findScenarioByFilename: (scenarioFilename) ->
+    scenario = @scenariosByFilename[scenarioFilename]
+    return scenario  if scenario?
+    for scenarioF, scenario of @scenariosByFilename
+      endsWith = scenarioF.indexOf(scenarioFilename, scenarioF.length - scenarioFilename.length) isnt -1
+      return scenario  if endsWith
+    scenarioFilename
 
 
   _maybeSetContentLocation: (req, res) ->
