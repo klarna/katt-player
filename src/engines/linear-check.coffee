@@ -32,6 +32,8 @@ module.exports = class LinearCheckEngine
   options: undefined
   _contexts: undefined
   _playOperationIndex_modifyContext: () ->
+  _middleware_resolveOperationIndex: (req, res, operationIndex) -> operationIndex
+
 
   constructor: (scenarios, options = {}) ->
     return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
@@ -124,6 +126,11 @@ module.exports = class LinearCheckEngine
     context.scenario = scenario = @_findScenarioByFilename scenarioFilename
     unless scenario?
       return @sendError res, 500, "Unknown scenario with filename #{scenarioFilename}"
+
+    operationIndex = @_middleware_resolveOperationIndex req, res, operationIndex
+
+    if _.isNaN(operationIndex - 0) or (resetToOperationIndex isnt undefined and _.isNaN(resetToOperationIndex - 0))
+      return @sendError res, 500, "Unknown operations with filename #{scenarioFilename} - #{operationIndex}|#{resetToOperationIndex}"
 
     # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
     if resetToOperationIndex?
