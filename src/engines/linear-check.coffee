@@ -182,7 +182,7 @@ module.exports = class LinearCheckEngine
     for scenarioF, scenario of @scenariosByFilename
       endsWith = scenarioF.indexOf(scenarioFilename, scenarioF.length - scenarioFilename.length) isnt -1
       return scenario  if endsWith
-    scenarioFilename
+    undefined
 
 
   _maybeSetContentLocation: (req, res) ->
