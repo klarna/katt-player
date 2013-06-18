@@ -23,7 +23,7 @@
     "node": "~0.8"
   },
   "dependencies": {
-    "katt-js": "git+ssh://gitosis@git.internal.machines:katt-js.git#fb8ec48",
+    "katt-js": "git+ssh://gitosis@git.internal.machines:katt-js.git#722d5d6",
     "katt-blueprint-parser": "~1.0.3",
     "argparse": "~0.1.13",
     "glob": "~3.1.21",
