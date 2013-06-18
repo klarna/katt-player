@@ -25,7 +25,7 @@
     }
   ],
   "bin": {
-    "katt-player": "bin/cli.coffee"
+    "katt-player": "coffee bin/cli.coffee"
   },
   "scripts": {
     "prepublish": "make prepublish",
@@ -51,7 +51,8 @@
   },
   "publishConfig": {
       "bin": {
-          "katt-player": "bin/cli.js"
-      }
+          "katt-player": "node bin/cli.js"
+      },
+      "scripts": {}
   }
 }
