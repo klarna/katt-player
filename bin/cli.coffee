@@ -15,7 +15,7 @@
 fs = require 'fs'
 argparse = require 'argparse'
 _ = require 'lodash'
-kattPlayer = require './katt-player'
+kattPlayer = require '../'
 pkg = require '../package'
 
 # For argument validation / transformation.
