@@ -2,13 +2,13 @@
 
 KATT player is a mock HTTP server that replies with HTTP responses based on KATT blueprints."
 
-# Install
+## Install
 
 ```bash
 npm install katt-player
 ```
 
-# Usage
+## Usage
 
 ```bash
 katt-player [--engine=linear] [--port=1337] FOLDER      # default engine is linear, port is 1337
@@ -24,6 +24,6 @@ app.load 'FOLDER', 'FILE1', 'FILE2'
 app.listen 1337
 ```
 
-# License
+## License
 
-[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
+[Apache 2.0](LICENSE)

@@ -1,4 +1,1 @@
-/src
-/test
-*.coffee
-Makefile
+.coffee.mk/.npmignore

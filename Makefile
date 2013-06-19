@@ -1,34 +1,12 @@
-COFFEE := $(wildcard *.coffee src/**/*.coffee)
-JS := $(patsubst src%, lib%, $(COFFEE:.coffee=.js))
+# Default
+.PHONY: all
 
-.PHONY: all clean prepublish test testem
+all: force
+	@$(MAKE) -f .coffee.mk/coffee.mk $@
 
-all: $(JS)
+%: force
+	@$(MAKE) -f .coffee.mk/coffee.mk $@
 
-$(JS): $(1)
+force: ;
 
-%.js: %.coffee
-	@$(eval input := $<)
-	@$(eval output := $@)
-	@mkdir -p `dirname $(output)`
-	@coffee -pc $(input) > $(output)
-
-lib/%.js: src/%.coffee
-	@$(eval input := $<)
-	@$(eval output := $@)
-	@mkdir -p `dirname $(output)`
-	@coffee -pc $(input) > $(output)
-
-clean:
-	@rm -f $(JS)
-
-prepublish: clean all
-
-test:
-	@mocha --reporter spec test
-
-tap:
-	@testem ci
-
-testem:
-	@testem
+# Custom
