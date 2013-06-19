@@ -121,7 +121,7 @@ module.exports = class LinearCheckEngine
       scenario: undefined
       operationIndex: 0
       vars: _.merge {}, @options.vars or {},
-        katt.utils.getHost req.headers.host
+        katt.utils.parseHost req.headers.host
     }
 
     # Check for scenario
@@ -196,7 +196,7 @@ module.exports = class LinearCheckEngine
     return  unless operation
 
     # maybe the request target has changed during the skipped operations
-    result = katt.validateURL req.url, operation.request.url, context.vars
+    result = katt.validateUrl req.url, operation.request.url, context.vars
     if result?[0]?[0] is 'not_equal'
       intendedUrl = result[0][3]
       res.setHeader 'content-location', intendedUrl
@@ -314,7 +314,7 @@ module.exports = class LinearCheckEngine
     result.push.apply result, methodResult  if methodResult.length
 
     urlResult = []
-    urlResult = katt.validateURL actualRequest.url, expectedRequest.url, vars
+    urlResult = katt.validateUrl actualRequest.url, expectedRequest.url, vars
     result.push.apply result, urlResult  if urlResult.length
 
     @validateReqRes actualRequest, expectedRequest, vars, result
