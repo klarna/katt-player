@@ -3,7 +3,7 @@
   fs
   should
   nock
-} = require './utils'
+} = r = require './_utils'
 
 describe 'KATT Player', () ->
   blueprint = fs.readFileSync "#{__dirname}/basic.apib", 'utf8'

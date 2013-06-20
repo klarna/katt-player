@@ -2,10 +2,10 @@ express = require 'express'
 {
   _
   fs
-  should
   nock
-} = require './utils'
-cli = require '../src/cli'
+  should
+} = require './_utils'
+cli = require '../bin/cli'
 
 err = process.stderr.write
 log = process.stdout.write
