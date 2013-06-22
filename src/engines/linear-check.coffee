@@ -121,7 +121,7 @@ module.exports = class LinearCheckEngine
       scenario: undefined
       operationIndex: 0
       vars: _.merge {}, @options.vars or {},
-        katt.getHost req.headers.host
+        katt.utils.getHost req.headers.host
     }
 
     # Check for scenario
@@ -264,7 +264,7 @@ module.exports = class LinearCheckEngine
     res.setHeader header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>
-      res.body = JSON.stringify(res.body, null, 2)  if katt.isJsonBody res
+      res.body = JSON.stringify(res.body, null, 2)  if katt.utils.isJsonBody res
       res.send res.body
       @callHook 'postSend', req, res
 
@@ -298,7 +298,7 @@ module.exports = class LinearCheckEngine
     headersResult = katt.validateHeaders actualReqRes.headers, expectedReqRes.headers, vars  if @options.check.headers
     result.push.apply result, headersResult  if headersResult.length
 
-    actualReqResBody = katt.maybeJsonBody actualReqRes
+    actualReqResBody = katt.utils.maybeJsonBody actualReqRes
     bodyResult = []
     bodyResult = katt.validateBody actualReqResBody, expectedReqRes.body, vars  if @options.check.body
     result.push.apply result, bodyResult  if bodyResult.length
