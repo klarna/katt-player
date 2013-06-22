@@ -132,7 +132,9 @@ module.exports = class LinearCheckEngine
     operationIndex = @_middleware_resolveOperationIndex req, res, operationIndex
 
     if _.isNaN(operationIndex - 0) or (resetToOperationIndex isnt undefined and _.isNaN(resetToOperationIndex - 0))
-      return @sendError res, 500, "Unknown operations with filename #{scenarioFilename} - #{operationIndex}|#{resetToOperationIndex}"
+      return @sendError res, 500, """
+      Unknown operations with filename #{scenarioFilename} - #{operationIndex}|#{resetToOperationIndex}
+      """
 
     # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
     if resetToOperationIndex?
@@ -280,11 +282,11 @@ module.exports = class LinearCheckEngine
       value
 
 
-  callHook: (name, req, res, next = ->) ->
+  callHook: (name, req, res, next) ->
     if @options.hooks[name]?
       @options.hooks[name] req, res, next
     else
-      next()
+      next()  if next?
 
 
   sendError: (res, statusCode, error) ->

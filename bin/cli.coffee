@@ -37,8 +37,9 @@ CUSTOM_TYPES =
 
 parseArgs = (args) ->
   engines = kattPlayer.getEngineNames().join(', ')
+  ArgumentParser = argparse.ArgumentParser
 
-  parser = new argparse.ArgumentParser
+  parser = new ArgumentParser
     description: pkg.description
     version: pkg.version
     addHelp: true
@@ -77,7 +78,8 @@ main = exports.main = (args = process.args) ->
   {hostname, port} = args
   args.engineOptions.vars ?= {}
   _.merge args.engineOptions, {vars: {hostname, port}}
-  engine = new args.engine(args.scenarios, args.engineOptions)
+  Engine = args.engine
+  engine = new Engine args.scenarios, args.engineOptions
   kattPlayer.makeServer(engine).listen port, hostname, ->
     console.log "Server started on http://#{hostname}:#{port}"
 
