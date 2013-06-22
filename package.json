@@ -36,7 +36,7 @@
     "cookie": "~0.1.0",
     "glob": "~3.1.21",
     "katt-blueprint-parser": "~1.0.3",
-    "katt-js": "git+ssh://gitosis@git.internal.machines:katt-js.git#6fa51fa",
+    "katt-js": "git+ssh://gitosis@git.internal.machines:katt-js.git#67f9540",
     "lodash": "~1.3.1"
   },
   "devDependencies": {
