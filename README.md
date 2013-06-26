@@ -1,12 +1,14 @@
-# KATT player
+# KATT player [![Build Status][2]][1]
 
 KATT player is a mock HTTP server that replies with HTTP responses based on KATT blueprints."
+
 
 ## Install
 
 ```bash
 npm install katt-player
 ```
+
 
 ## Usage
 
@@ -24,6 +26,11 @@ app.load 'FOLDER', 'FILE1', 'FILE2'
 app.listen 1337
 ```
 
+
 ## License
 
 [Apache 2.0](LICENSE)
+
+
+  [1]: https://travis-ci.org/klarna/katt-player
+  [2]: https://travis-ci.org/klatna/katt-player.png
