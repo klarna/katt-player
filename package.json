@@ -11,7 +11,7 @@
   "version": "0.0.1",
   "author": "Klarna AB",
   "contributors": [
-    "Andrei Necualu <@andreineculau>",
+    "Andrei Neculau <@andreineculau>",
     "Isak Bakken <isak@klarna.com>"
   ],
   "repository": {
@@ -52,7 +52,6 @@
   "publishConfig": {
       "bin": {
           "katt-player": "node bin/cli.js"
-      },
-      "scripts": {}
+      }
   }
 }
