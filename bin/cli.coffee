@@ -22,9 +22,9 @@ pkg = require '../package'
 # For argument validation / transformation.
 CUSTOM_TYPES =
   engine: (value) ->
-    if kattPlayer.hasEngine(value)
+    if kattPlayer.hasEngine value
       kattPlayer.getEngine value
-    else if fs.existsSync(value)
+    else if fs.existsSync value
       require value
     else
       throw new Error "Invalid engine: #{value}."
@@ -37,7 +37,7 @@ CUSTOM_TYPES =
 
 
 parseArgs = (args) ->
-  engines = kattPlayer.getEngineNames().join(', ')
+  engines = kattPlayer.getEngineNames().join ', '
   ArgumentParser = argparse.ArgumentParser
 
   parser = new ArgumentParser
@@ -71,7 +71,7 @@ parseArgs = (args) ->
     type: CUSTOM_TYPES.json
     dest: 'engineOptions'
 
-  parser.parseArgs(args)
+  parser.parseArgs args
 
 
 main = exports.main = (args = process.args) ->
