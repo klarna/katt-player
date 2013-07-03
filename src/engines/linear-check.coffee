@@ -32,8 +32,8 @@ GLOB_OPTIONS =
 module.exports = class LinearCheckEngine
   options: undefined
   _contexts: undefined
-  _playOperationIndex_modifyContext: () ->
-  _middleware_resolveOperationIndex: (req, res, operationIndex) -> operationIndex
+  _playTransactionIndex_modifyContext: () ->
+  _middleware_resolveTransactionIndex: (req, res, transactionIndex) -> transactionIndex
 
 
   constructor: (scenarios, options = {}) ->
@@ -43,12 +43,12 @@ module.exports = class LinearCheckEngine
       UID:
         UID: undefined
         scenario: undefined
-        operationIndex: undefined
+        transactionIndex: undefined
         vars: undefined
     @options = _.merge options, {
       default:
         scenario: undefined
-        operation: 0
+        transaction: 0
       hooks:
         preSend: undefined
         postSend: undefined
@@ -101,15 +101,15 @@ module.exports = class LinearCheckEngine
 
   middleware_scenario: (req, res, next) ->
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
-    cookieOperation = decodeURIComponent(req.cookies.katt_operation) or @options.default.operation
-    [operationIndex, resetToOperationIndex] = "#{cookieOperation}".split '|'
+    cookieTransaction = decodeURIComponent(req.cookies.katt_transaction) or @options.default.transaction
+    [transactionIndex, resetToTransactionIndex] = "#{cookieTransaction}".split '|'
 
     # Check for scenario filename
     scenarioFilename = cookieScenario
 
     unless scenarioFilename
       res.cookies.katt_scenario = undefined
-      res.cookies.katt_operation = undefined
+      res.cookies.katt_transaction = undefined
       return @sendError res, 500, 'Please define a scenario'
 
     sessionID = res.cookies.katt_session_id = req.cookies.katt_session_id or (new Date().getTime())
@@ -118,7 +118,7 @@ module.exports = class LinearCheckEngine
     context = req.context = @_contexts[UID] ?= {
       UID
       scenario: undefined
-      operationIndex: 0
+      transactionIndex: 0
       vars: _.merge {}, @options.vars or {},
         katt.utils.parseHost req.headers.host
     }
@@ -128,40 +128,40 @@ module.exports = class LinearCheckEngine
     unless scenario?
       return @sendError res, 500, "Unknown scenario with filename #{scenarioFilename}"
 
-    operationIndex = @_middleware_resolveOperationIndex req, res, operationIndex
+    transactionIndex = @_middleware_resolveTransactionIndex req, res, transactionIndex
 
-    if _.isNaN(operationIndex - 0) or (resetToOperationIndex isnt undefined and _.isNaN(resetToOperationIndex - 0))
+    if _.isNaN(transactionIndex - 0) or (resetToTransactionIndex isnt undefined and _.isNaN(resetToTransactionIndex - 0))
       return @sendError res, 500, """
-      Unknown operations with filename #{scenarioFilename} - #{operationIndex}|#{resetToOperationIndex}
+      Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
       """
 
-    # FIXME this is not really the index, it's the reference point (the last operation step), so please rename
-    if resetToOperationIndex?
-      currentOperationIndex = parseInt resetToOperationIndex, 10
+    # FIXME this is not really the index, it's the reference point (the last transaction step), so please rename
+    if resetToTransactionIndex?
+      currentTransactionIndex = parseInt resetToTransactionIndex, 10
     else
-      currentOperationIndex = context.operationIndex
-    # Check for operation index
-    context.operationIndex = parseInt operationIndex, 10
+      currentTransactionIndex = context.transactionIndex
+    # Check for transaction index
+    context.transactionIndex = parseInt transactionIndex, 10
 
-    # FIXME if context.operationIndex < currentOperationIndex, then it means we went back in time
+    # FIXME if context.transactionIndex < currentTransactionIndex, then it means we went back in time
     # and it might be better to clear the context.vars
 
-    # Check if we're FFW operations
-    if context.operationIndex > currentOperationIndex
-      mockedOperationIndex = context.operationIndex - 1
-      for operationIndex in [currentOperationIndex..mockedOperationIndex]
-        context.operationIndex = operationIndex
-        mockResponse = @_mockPlayOperationIndex req, res
+    # Check if we're FFW transactions
+    if context.transactionIndex > currentTransactionIndex
+      mockedTransactionIndex = context.transactionIndex - 1
+      for transactionIndex in [currentTransactionIndex..mockedTransactionIndex]
+        context.transactionIndex = transactionIndex
+        mockResponse = @_mockPlayTransactionIndex req, res
 
         return @sendError res, mockResponse.statusCode, mockResponse.body  if mockResponse.getHeader 'x-katt-error'
 
-        nextOperationIndex = context.operationIndex
-        logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
-        operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
+        nextTransactionIndex = context.transactionIndex
+        logPrefix = "#{context.scenario.filename}\##{nextTransactionIndex}"
+        transaction = context.scenario.blueprint.transactions[nextTransactionIndex - 1]
 
         # Validate response, so that we can continue with the request
         result = []
-        @validateResponse mockResponse, operation.response, context.vars, result
+        @validateResponse mockResponse, transaction.response, context.vars, result
         if result.length
           result = JSON.stringify result, null, 2
           return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
@@ -171,12 +171,12 @@ module.exports = class LinearCheckEngine
           for key, value of mockResponse.cookies
             req.cookies[key] = value
 
-      context.operationIndex = mockedOperationIndex + 1
-      req.url = @recallDeep context.scenario.blueprint.operations[nextOperationIndex].request.url, context.vars
+      context.transactionIndex = mockedTransactionIndex + 1
+      req.url = @recallDeep context.scenario.blueprint.transactions[nextTransactionIndex].request.url, context.vars
 
     # Play
     res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']
-    @_playOperationIndex req, res
+    @_playTransactionIndex req, res
 
 
   _findScenarioByFilename: (scenarioFilename) ->
@@ -190,38 +190,38 @@ module.exports = class LinearCheckEngine
 
   _maybeSetContentLocation: (req, res) ->
     context = req.context
-    operation = context.scenario.blueprint.operations[context.operationIndex]
+    transaction = context.scenario.blueprint.transactions[context.transactionIndex]
 
-    return  unless operation
+    return  unless transaction
 
-    # maybe the request target has changed during the skipped operations
-    result = katt.validateUrl req.url, operation.request.url, context.vars
+    # maybe the request target has changed during the skipped transactions
+    result = katt.validateUrl req.url, transaction.request.url, context.vars
     if result?[0]?[0] is 'not_equal'
       intendedUrl = result[0][3]
       res.setHeader 'content-location', intendedUrl
 
 
-  _mockPlayOperationIndex: (req, res) ->
+  _mockPlayTransactionIndex: (req, res) ->
     context = req.context
 
     mockRequest = new MockRequest req
 
-    nextOperationIndex = context.operationIndex + 1
-    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
-    operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
-    unless operation
+    nextTransactionIndex = context.transactionIndex + 1
+    logPrefix = "#{context.scenario.filename}\##{nextTransactionIndex}"
+    transaction = context.scenario.blueprint.transactions[nextTransactionIndex - 1]
+    unless transaction
       return @sendError res, 403,
-        "Operation #{nextOperationIndex} has not been defined in blueprint file for #{context.scenario.filename}"
+        "Transaction #{nextTransactionIndex} has not been defined in blueprint file for #{context.scenario.filename}"
 
-    mockRequest.method = operation.request.method
-    mockRequest.url = @recallDeep operation.request.url, context.vars
-    mockRequest.headers = @recallDeep(operation.request.headers, context.vars) or {}
-    mockRequest.body = @recallDeep operation.request.body, context.vars
+    mockRequest.method = transaction.request.method
+    mockRequest.url = @recallDeep transaction.request.url, context.vars
+    mockRequest.headers = @recallDeep(transaction.request.headers, context.vars) or {}
+    mockRequest.body = @recallDeep transaction.request.body, context.vars
     # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
     mockResponse = new MockResponse()
 
-    @_playOperationIndex mockRequest, mockResponse
+    @_playTransactionIndex mockRequest, mockResponse
 
     mockResponse
 
@@ -232,36 +232,36 @@ module.exports = class LinearCheckEngine
     header or cookie
 
 
-  _playOperationIndex: (req, res) ->
+  _playTransactionIndex: (req, res) ->
     context = req.context
 
-    @_playOperationIndex_modifyContext req, res
+    @_playTransactionIndex_modifyContext req, res
 
-    nextOperationIndex = context.operationIndex + 1
-    logPrefix = "#{context.scenario.filename}\##{nextOperationIndex}"
-    operation = context.scenario.blueprint.operations[nextOperationIndex - 1]
-    unless operation
+    nextTransactionIndex = context.transactionIndex + 1
+    logPrefix = "#{context.scenario.filename}\##{nextTransactionIndex}"
+    transaction = context.scenario.blueprint.transactions[nextTransactionIndex - 1]
+    unless transaction
       return @sendError res, 403,
-        "Operation #{nextOperationIndex} has not been defined in blueprint file for #{context.scenario.filename}"
+        "Transaction #{nextTransactionIndex} has not been defined in blueprint file for #{context.scenario.filename}"
 
-    context.operationIndex = nextOperationIndex
+    context.transactionIndex = nextTransactionIndex
 
     if @_dontValidate req, res
       @_maybeSetContentLocation req, res
     else
       result = []
-      @validateRequest req, operation.request, context.vars, result
+      @validateRequest req, transaction.request, context.vars, result
       if result.length
         result = JSON.stringify result, null, 2
         return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
 
     res.cookies.katt_scenario = context.scenario.filename
-    res.cookies.katt_operation = context.operationIndex
+    res.cookies.katt_transaction = context.transactionIndex
 
-    headers = @recallDeep(operation.response.headers, context.vars) or {}
-    res.body = @recallDeep operation.response.body, context.vars
+    headers = @recallDeep(transaction.response.headers, context.vars) or {}
+    res.body = @recallDeep transaction.response.body, context.vars
 
-    res.statusCode = operation.response.status
+    res.statusCode = transaction.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
 
     @callHook 'preSend', req, res, () =>
