@@ -130,7 +130,9 @@ module.exports = class LinearCheckEngine
 
     transactionIndex = @_middleware_resolveTransactionIndex req, res, transactionIndex
 
-    if _.isNaN(transactionIndex - 0) or (resetToTransactionIndex isnt undefined and _.isNaN(resetToTransactionIndex - 0))
+    unknownTransactionIndex = _.isNaN transactionIndex - 0
+    unknownResetTransactionIndex = resetToTransactionIndex isnt undefined and _.isNaN resetToTransactionIndex - 0
+    if unknownTransactionIndex or unknownResetTransactionIndex
       return @sendError res, 500, """
       Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
       """

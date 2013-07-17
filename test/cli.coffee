@@ -43,9 +43,9 @@ describe 'CLI', () ->
   describe "when providing an incorrect engine", ->
 
     it 'should not accept argument: -e bad-engine', ->
-      (->
+      fun = () ->
         server = cli.main(['-e', 'bad-engine'])
-      ).should.throw "process.exit(2)"
+      fun.should.throw "process.exit(2)"
 
 
   # describe "when providing a built-in engine", ->
