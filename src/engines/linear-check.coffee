@@ -21,11 +21,14 @@ glob = require 'glob'
 _ = require 'lodash'
 katt = require 'katt-js'
 {
+  isJsonCT
   maybeJsonBody
+  recall
 } = require 'katt-js/src/utils'
 {
   validate
   validateUrl
+  validateStatusCode
   validateHeaders
   validateBody
 } = require 'katt-js/src/validate'
@@ -54,11 +57,12 @@ module.exports = class LinearCheckEngine
         UID: undefined
         scenario: undefined
         transactionIndex: undefined
-        vars: undefined
+        params: undefined
     @options = _.merge options, {
       default:
         scenario: undefined
         transaction: 0
+      params: {}
       callbacks:
         preSend: undefined
         postSend: undefined
@@ -111,15 +115,15 @@ module.exports = class LinearCheckEngine
 
   middleware_scenario: (req, res, next) ->
     cookieScenario = req.cookies.katt_scenario or @options.default.scenario
-    cookieTransaction = decodeURIComponent(req.cookies.katt_transaction) or @options.default.transaction
+    cookieTransaction = decodeURIComponent(req.cookies.katt_transaction or @options.default.transaction)
     [transactionIndex, resetToTransactionIndex] = "#{cookieTransaction}".split '|'
 
     # Check for scenario filename
     scenarioFilename = cookieScenario
 
     unless scenarioFilename
-      res.cookies.katt_scenario = undefined
-      res.cookies.katt_transaction = undefined
+      delete res.cookies.katt_scenario
+      delete res.cookies.katt_transaction
       return @sendError res, 500, 'Please define a scenario'
 
     sessionID = res.cookies.katt_session_id = req.cookies.katt_session_id or (new Date().getTime())
@@ -129,7 +133,7 @@ module.exports = class LinearCheckEngine
       UID
       scenario: undefined
       transactionIndex: 0
-      vars: _.merge {}, @options.vars or {},
+      params: _.merge {}, @options.params or {},
         katt.utils.parseHost req.headers.host
     }
 
@@ -277,7 +281,8 @@ module.exports = class LinearCheckEngine
     res.setHeader header, headerValue  for header, headerValue of headers
 
     @callback 'preSend', req, res, () =>
-      res.body = JSON.stringify(res.body, null, 2)  if katt.utils.isJsonBody res
+      contentType = _.find res.headers, (header) -> header.toLowerCase() is 'content-type'
+      res.body = JSON.stringify(res.body, null, 2)  if isJsonCT contentType
       res.send res.body
       @callback 'postSend', req, res
 
@@ -287,7 +292,7 @@ module.exports = class LinearCheckEngine
   recallDeep: (value, params) =>
     if _.isString value
       value = value.replace /{{>/g, '{{<'
-      katt.recall value, params
+      recall value, params
     else
       value[key] = @recallDeep value[key], params  for key in _.keys value
       value
@@ -307,37 +312,20 @@ module.exports = class LinearCheckEngine
 
 
   validateReqRes: (actualReqRes, expectedReqRes, params = {}, errors = []) ->
-    headerErrors = []
-    headersErrors = validateHeaders actualReqRes.headers, expectedReqRes.headers, params  if @options.check.headers
-    errors.push.apply errors, headersErrors  if headersErrors.length
-
+    validateHeaders actualReqRes.headers, expectedReqRes.headers, params, errors  if @options.check.headers
     actualReqResBody = maybeJsonBody actualReqRes
-    bodyErrors = []
-    bodyErrors = validateBody actualReqResBody, expectedReqRes.body, params  if @options.check.body
-    errors.push.apply errors, bodyErrors  if bodyErrors.length
-
+    validateBody actualReqResBody, expectedReqRes.body, params, errors  if @options.check.body
     errors
 
 
   validateRequest: (actualRequest, expectedRequest, params = {}, errors = []) ->
-    methodErrors = []
-    methodErrors = validate 'method', actualRequest.method, expectedRequest.method, params  if @options.check.method
-    errors.push.apply errors, methodErrors  if methodErrors.length
-
-    urlErrors = []
-    urlErrors = validateUrl actualRequest.url, expectedRequest.url, params
-    errors.push.apply errors, urlErrors  if urlErrors.length
-
+    validate 'method', actualRequest.method, expectedRequest.method, params, errors  if @options.check.method
+    validateUrl actualRequest.url, expectedRequest.url, params, errors
     @validateReqRes actualRequest, expectedRequest, params, errors
-
     errors
 
 
   validateResponse: (actualResponse, expectedResponse, params = {}, errors = []) ->
-    statusErrors = []
-    statusErrors = validateStatusCode actualResponse.statusCode, expectedResponse.status, params
-    errors.push.apply errors, statusErrors  if statusErrors.length
-
+    validateStatusCode actualResponse.statusCode, expectedResponse.status, params, errors
     @validateReqRes actualResponse, expectedResponse, params, errors
-
-    result
+    errors
