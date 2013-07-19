@@ -17,17 +17,9 @@
 http = require 'http'
 url = require 'url'
 katt = require 'katt-js'
+_ = require 'lodash'
 utils = require './utils'
 
-ENGINES =
-  'linear': require './engines/linear'
-  'linear-check': require './engines/linear-check'
-
-
-exports.addEngine = (name, engine)   -> ENGINES[name] = engine
-exports.hasEngine = (name)           -> ENGINES[name] isnt undefined
-exports.getEngine = (name)           -> ENGINES[name]
-exports.getEngineNames =             -> Object.keys ENGINES
 
 exports.makeServer = (engine) ->
   app = http.createServer (req, res, next) ->
@@ -55,3 +47,8 @@ exports.makeServer = (engine) ->
       engine.middleware req, res, next
   app.engine = engine
   app
+
+
+exports.engines =
+  'linear': require './engines/linear'
+  'linear-check': require './engines/linear-check'
