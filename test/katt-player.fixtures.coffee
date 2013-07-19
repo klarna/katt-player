@@ -11,6 +11,16 @@ exports.run.before = () ->
   fsMock.readFileSync = (filename) ->
     return fsTest1  if filename is '/mock/basic.apib'
     fs.readFileSync.apply fs, arguments
+  fsMock.existsSync = (filename) ->
+    return true  if filename is '/mock/basic.apib'
+    fs.existsSync.apply fs, arguments
+  fsMock.statSync = (filename) ->
+    if filename is '/mock/basic.apib'
+      return {
+        isDirectory: () -> false
+        isFile: () -> true
+      }
+    fs.statSync.apply fs, arguments
   mockery.registerMock 'fs', fsMock
   mockery.enable
     useCleanCache: true
@@ -40,6 +50,7 @@ the location of the created example.
 POST /step1
 > Accept: application/json
 > Content-Type: application/json
+> Cookie: katt_scenario=basic.apib
 {
     "cart": {
         "items": [
@@ -62,15 +73,16 @@ POST /step1
     }
 }
 < 201
-< Location: /step2
+< Location: {{>example_uri}}
 
 
 # Step 2
 
 The client (customer) fetches the created resource data.
 
-GET /step2
+GET {{<example_uri}}
 > Accept: application/json
+> Cookie: katt_scenario=basic.apib, katt_transaction=1
 < 200
 < Content-Type: application/json
 {
@@ -85,7 +97,7 @@ GET /step2
 
 The customer submits an e-mail address in the form.
 
-POST /step3
+POST {{<example_uri}}/step3
 > Accept: application/json
 > Content-Type: application/json
 {
@@ -106,7 +118,7 @@ POST /step3
 The customer submits the form again, this time also with his password.
 We inform him that payment is required.
 
-POST /step4
+POST {{<example_uri}}/step4
 > Accept: application/json
 > Content-Type: application/json
 {
