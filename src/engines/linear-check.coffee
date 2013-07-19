@@ -20,6 +20,15 @@ url = require 'url'
 glob = require 'glob'
 _ = require 'lodash'
 katt = require 'katt-js'
+{
+  maybeJsonBody
+} = require 'katt-js/src/utils'
+{
+  validate
+  validateUrl
+  validateHeaders
+  validateBody
+} = require 'katt-js/src/validate'
 MockResponse = require '../mock-response'
 MockRequest = require '../mock-request'
 
@@ -36,8 +45,9 @@ module.exports = class LinearCheckEngine
   _middleware_resolveTransactionIndex: (req, res, transactionIndex) -> transactionIndex
 
 
-  constructor: (scenarios, options = {}) ->
-    return new LinearCheckEngine(scenarios, options)  unless this instanceof LinearCheckEngine
+  constructor: ({scenarios, options}) ->
+    return new LinearCheckEngine({scenarios, options})  unless this instanceof LinearCheckEngine
+    options ?= {}
     @scenariosByFilename = {}
     @_contexts =
       UID:
@@ -49,7 +59,7 @@ module.exports = class LinearCheckEngine
       default:
         scenario: undefined
         transaction: 0
-      hooks:
+      callbacks:
         preSend: undefined
         postSend: undefined
       check:
@@ -146,7 +156,7 @@ module.exports = class LinearCheckEngine
     context.transactionIndex = parseInt transactionIndex, 10
 
     # FIXME if context.transactionIndex < currentTransactionIndex, then it means we went back in time
-    # and it might be better to clear the context.vars
+    # and it might be better to clear the context.params
 
     # Check if we're FFW transactions
     if context.transactionIndex > currentTransactionIndex
@@ -163,7 +173,7 @@ module.exports = class LinearCheckEngine
 
         # Validate response, so that we can continue with the request
         result = []
-        @validateResponse mockResponse, transaction.response, context.vars, result
+        @validateResponse mockResponse, transaction.response, context.params, result
         if result.length
           result = JSON.stringify result, null, 2
           return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
@@ -174,7 +184,7 @@ module.exports = class LinearCheckEngine
             req.cookies[key] = value
 
       context.transactionIndex = mockedTransactionIndex + 1
-      req.url = @recallDeep context.scenario.blueprint.transactions[nextTransactionIndex].request.url, context.vars
+      req.url = @recallDeep context.scenario.blueprint.transactions[nextTransactionIndex].request.url, context.params
 
     # Play
     res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']
@@ -197,7 +207,7 @@ module.exports = class LinearCheckEngine
     return  unless transaction
 
     # maybe the request target has changed during the skipped transactions
-    result = katt.validateUrl req.url, transaction.request.url, context.vars
+    result = katt.validateUrl req.url, transaction.request.url, context.params
     if result?[0]?[0] is 'not_equal'
       intendedUrl = result[0][3]
       res.setHeader 'content-location', intendedUrl
@@ -216,9 +226,9 @@ module.exports = class LinearCheckEngine
         "Transaction #{nextTransactionIndex} has not been defined in blueprint file for #{context.scenario.filename}"
 
     mockRequest.method = transaction.request.method
-    mockRequest.url = @recallDeep transaction.request.url, context.vars
-    mockRequest.headers = @recallDeep(transaction.request.headers, context.vars) or {}
-    mockRequest.body = @recallDeep transaction.request.body, context.vars
+    mockRequest.url = @recallDeep transaction.request.url, context.params
+    mockRequest.headers = @recallDeep(transaction.request.headers, context.params) or {}
+    mockRequest.body = @recallDeep transaction.request.body, context.params
     # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
     mockResponse = new MockResponse()
@@ -252,7 +262,7 @@ module.exports = class LinearCheckEngine
       @_maybeSetContentLocation req, res
     else
       result = []
-      @validateRequest req, transaction.request, context.vars, result
+      @validateRequest req, transaction.request, context.params, result
       if result.length
         result = JSON.stringify result, null, 2
         return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
@@ -260,32 +270,32 @@ module.exports = class LinearCheckEngine
     res.cookies.katt_scenario = context.scenario.filename
     res.cookies.katt_transaction = context.transactionIndex
 
-    headers = @recallDeep(transaction.response.headers, context.vars) or {}
-    res.body = @recallDeep transaction.response.body, context.vars
+    headers = @recallDeep(transaction.response.headers, context.params) or {}
+    res.body = @recallDeep transaction.response.body, context.params
 
     res.statusCode = transaction.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
 
-    @callHook 'preSend', req, res, () =>
+    @callback 'preSend', req, res, () =>
       res.body = JSON.stringify(res.body, null, 2)  if katt.utils.isJsonBody res
       res.send res.body
-      @callHook 'postSend', req, res
+      @callback 'postSend', req, res
 
     true
 
 
-  recallDeep: (value, vars) =>
+  recallDeep: (value, params) =>
     if _.isString value
       value = value.replace /{{>/g, '{{<'
-      katt.recall value, vars
+      katt.recall value, params
     else
-      value[key] = @recallDeep value[key], vars  for key in _.keys value
+      value[key] = @recallDeep value[key], params  for key in _.keys value
       value
 
 
-  callHook: (name, req, res, next) ->
-    if @options.hooks[name]?
-      @options.hooks[name] req, res, next
+  callback: (name, req, res, next) ->
+    if @options.callbacks[name]?
+      @options.callbacks[name] req, res, next
     else
       next()  if next?
 
@@ -296,38 +306,38 @@ module.exports = class LinearCheckEngine
     res.send statusCode, error
 
 
-  validateReqRes: (actualReqRes, expectedReqRes, vars = {}, result = []) ->
-    headerResult = []
-    headersResult = katt.validateHeaders actualReqRes.headers, expectedReqRes.headers, vars  if @options.check.headers
-    result.push.apply result, headersResult  if headersResult.length
+  validateReqRes: (actualReqRes, expectedReqRes, params = {}, errors = []) ->
+    headerErrors = []
+    headersErrors = validateHeaders actualReqRes.headers, expectedReqRes.headers, params  if @options.check.headers
+    errors.push.apply errors, headersErrors  if headersErrors.length
 
-    actualReqResBody = katt.utils.maybeJsonBody actualReqRes
-    bodyResult = []
-    bodyResult = katt.validateBody actualReqResBody, expectedReqRes.body, vars  if @options.check.body
-    result.push.apply result, bodyResult  if bodyResult.length
+    actualReqResBody = maybeJsonBody actualReqRes
+    bodyErrors = []
+    bodyErrors = validateBody actualReqResBody, expectedReqRes.body, params  if @options.check.body
+    errors.push.apply errors, bodyErrors  if bodyErrors.length
 
-    result
-
-
-  validateRequest: (actualRequest, expectedRequest, vars = {}, result = []) ->
-    methodResult = []
-    methodResult = katt.validate 'method', actualRequest.method, expectedRequest.method, vars  if @options.check.method
-    result.push.apply result, methodResult  if methodResult.length
-
-    urlResult = []
-    urlResult = katt.validateUrl actualRequest.url, expectedRequest.url, vars
-    result.push.apply result, urlResult  if urlResult.length
-
-    @validateReqRes actualRequest, expectedRequest, vars, result
-
-    result
+    errors
 
 
-  validateResponse: (actualResponse, expectedResponse, vars = {}, result = []) ->
-    statusResult = []
-    statusResult = katt.validate 'status', actualResponse.statusCode, expectedResponse.status, vars
-    result.push.apply result, statusResult  if statusResult.length
+  validateRequest: (actualRequest, expectedRequest, params = {}, errors = []) ->
+    methodErrors = []
+    methodErrors = validate 'method', actualRequest.method, expectedRequest.method, params  if @options.check.method
+    errors.push.apply errors, methodErrors  if methodErrors.length
 
-    @validateReqRes actualResponse, expectedResponse, vars, result
+    urlErrors = []
+    urlErrors = validateUrl actualRequest.url, expectedRequest.url, params
+    errors.push.apply errors, urlErrors  if urlErrors.length
+
+    @validateReqRes actualRequest, expectedRequest, params, errors
+
+    errors
+
+
+  validateResponse: (actualResponse, expectedResponse, params = {}, errors = []) ->
+    statusErrors = []
+    statusErrors = validateStatusCode actualResponse.statusCode, expectedResponse.status, params
+    errors.push.apply errors, statusErrors  if statusErrors.length
+
+    @validateReqRes actualResponse, expectedResponse, params, errors
 
     result
