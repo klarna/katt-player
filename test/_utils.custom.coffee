@@ -1,3 +1,2 @@
 module.exports =
-  fs: require 'fs'
-  nock: require 'nock'
+  mockery: require 'mocker'
