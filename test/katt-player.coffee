@@ -4,6 +4,7 @@
 } = require './_utils'
 fixtures = require './katt-player.fixtures'
 katt = undefined # delayed
+kattPlayer = undefined # delayed
 
 describe 'katt', () ->
   describe 'run', () ->

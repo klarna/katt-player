@@ -1,2 +1,2 @@
 module.exports =
-  mockery: require 'mocker'
+  mockery: require 'mockery'
