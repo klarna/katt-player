@@ -29,4 +29,4 @@ module.exports = class LinearEngine extends LinearCheckEngine
         method: true
         headers: false
         body: false
-    super scenarios, options
+    super
