@@ -31,7 +31,9 @@ exports.helperPatching = (req, res, next) ->
       body = statusCode
 
     cookies = (cookie.serialize key, value, {path:'/'}  for key, value of res.cookies)
-    res.setHeader 'Set-Cookie', cookies
+    cookies = cookies.join ', '
+    res.setHeader 'Set-Cookie', cookies  if cookies
+
 
     @end body, 'utf-8'
 
