@@ -22,16 +22,17 @@ _ = require 'lodash'
 katt = require 'katt-js'
 {
   isJsonCT
-  maybeJsonBody
-  recall
-} = require 'katt-js/src/utils'
+  parseHost
+} = katt.utils
+callbacks = katt.callbacks
 {
   validate
-  validateUrl
-  validateStatusCode
-  validateHeaders
   validateBody
-} = require 'katt-js/src/validate'
+  validateHeaders
+  validateMethod
+  validateStatusCode
+  validateUrl
+} = katt.validate
 MockResponse = require '../mock-response'
 MockRequest = require '../mock-request'
 
@@ -134,7 +135,7 @@ module.exports = class LinearCheckEngine
       scenario: undefined
       transactionIndex: 0
       params: _.merge {}, @options.params or {},
-        katt.utils.parseHost req.headers.host
+        parseHost req.headers.host
     }
 
     # Check for scenario
@@ -176,11 +177,17 @@ module.exports = class LinearCheckEngine
         transaction = context.scenario.blueprint.transactions[nextTransactionIndex - 1]
 
         # Validate response, so that we can continue with the request
-        result = []
-        @validateResponse mockResponse, transaction.response, context.params, result
-        if result.length
-          result = JSON.stringify result, null, 2
-          return @sendError res, 403, "#{logPrefix} < Response does not match\n#{result}"
+        errors = []
+        @validateResponse {
+          actual: mockResponse
+          expected: transaction.response
+          params: context.params
+          callbacks
+          errors
+        }
+        if errors.length
+          errors = JSON.stringify errors, null, 2
+          return @sendError res, 403, "#{logPrefix} < Response does not match\n#{errors}"
 
         # Remember mockResponse cookies for next request
         do () ->
@@ -211,8 +218,15 @@ module.exports = class LinearCheckEngine
     return  unless transaction
 
     # maybe the request target has changed during the skipped transactions
-    result = katt.validateUrl req.url, transaction.request.url, context.params
-    if result?[0]?[0] is 'not_equal'
+    errors = []
+    validateUrl {
+      actual: req.url
+      expected: transaction.request.url
+      params: context.params
+      callbacks
+      errors
+    }
+    if errors?[0]?[0] is 'not_equal'
       intendedUrl = result[0][3]
       res.setHeader 'content-location', intendedUrl
 
@@ -265,11 +279,17 @@ module.exports = class LinearCheckEngine
     if @_dontValidate req, res
       @_maybeSetContentLocation req, res
     else
-      result = []
-      @validateRequest req, transaction.request, context.params, result
-      if result.length
-        result = JSON.stringify result, null, 2
-        return @sendError res, 403, "#{logPrefix} < Request does not match\n#{result}"
+      errors = []
+      @validateRequest {
+        actual: req
+        expected: transaction.request
+        params: context.params
+        callbacks
+        errors
+      }
+      if errors.length
+        errors = JSON.stringify errors, null, 2
+        return @sendError res, 403, "#{logPrefix} < Request does not match\n#{errors}"
 
     res.cookies.katt_scenario = context.scenario.filename
     res.cookies.katt_transaction = context.transactionIndex
@@ -289,13 +309,13 @@ module.exports = class LinearCheckEngine
     true
 
 
-  recallDeep: (value, params) =>
-    if _.isString value
-      value = value.replace /{{>/g, '{{<'
-      recall value, params
+  recallDeep: (input, params) =>
+    if _.isString input
+      input = input.replace /{{>/g, '{{<'
+      callbacks.recall {input, params}
     else
-      value[key] = @recallDeep value[key], params  for key in _.keys value
-      value
+      input[key] = @recallDeep input[key], params  for key in _.keys input
+      input
 
 
   callback: (name, req, res, next) ->
@@ -311,21 +331,73 @@ module.exports = class LinearCheckEngine
     res.send statusCode, error
 
 
-  validateReqRes: (actualReqRes, expectedReqRes, params = {}, errors = []) ->
-    validateHeaders actualReqRes.headers, expectedReqRes.headers, params, errors  if @options.check.headers
-    actualReqResBody = maybeJsonBody actualReqRes
-    validateBody actualReqResBody, expectedReqRes.body, params, errors  if @options.check.body
+  validateReqRes: ({actual, expected, params, callbacks, errors}) ->
+    errors ?= []
+    if @options.check.headers
+      validateHeaders {
+        actual: actual.headers
+        expected: expected.headers
+        params
+        callbacks
+        errors
+      }
+    if @options.check.body
+      validateBody {
+        actual: callbacks.parse {
+          headers: actual.headers
+          body: actual.body
+          params
+          callbacks
+        }
+        expected: expected.body
+        params
+        callbacks
+        errors
+      }
     errors
 
 
-  validateRequest: (actualRequest, expectedRequest, params = {}, errors = []) ->
-    validate 'method', actualRequest.method, expectedRequest.method, params, errors  if @options.check.method
-    validateUrl actualRequest.url, expectedRequest.url, params, errors
-    @validateReqRes actualRequest, expectedRequest, params, errors
+  validateRequest: ({actual, expected, params, callbacks, errors}) ->
+    errors ?= []
+    if @options.check.method
+      validateMethod {
+        actual: actual.method
+        expected: expected.method
+        params
+        callbacks
+        errors
+      }
+    validateUrl {
+      actual: actual.url
+      expected: expected.url
+      params
+      callbacks
+      errors
+    }
+    @validateReqRes {
+      actual
+      expected
+      params
+      callbacks
+      errors
+    }
     errors
 
 
-  validateResponse: (actualResponse, expectedResponse, params = {}, errors = []) ->
-    validateStatusCode actualResponse.statusCode, expectedResponse.status, params, errors
-    @validateReqRes actualResponse, expectedResponse, params, errors
+  validateResponse: ({actual, expected, params, callbacks, errors}) ->
+    errors ?= []
+    validateStatusCode {
+      actual: actual.statusCode
+      expected: expected.status
+      params
+      callbacks
+      errors
+    }
+    @validateReqRes {
+      actual
+      expected
+      params
+      callbacks
+      errors
+    }
     errors
