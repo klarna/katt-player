@@ -42,7 +42,6 @@ describe 'katt', () ->
         app = kattPlayer.makeServer engine
         app.listen port
         katt.run {scenario, params: {hostname, port}}, (err, result) ->
-          # console.error result.transactionResults[0]
           result.status.should.eql 'pass'
           app.close()
           done()
