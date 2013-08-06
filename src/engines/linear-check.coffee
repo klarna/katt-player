@@ -361,8 +361,8 @@ module.exports = class LinearCheckEngine
     errors ?= []
     if @options.check.method
       validateMethod {
-        actual: actual.method
-        expected: expected.method
+        actual: actual.method.toUpperCase()
+        expected: expected.method.toUpperCase()
         params
         callbacks
         errors
@@ -387,8 +387,8 @@ module.exports = class LinearCheckEngine
   validateResponse: ({actual, expected, params, callbacks, errors}) ->
     errors ?= []
     validateStatusCode {
-      actual: actual.statusCode
-      expected: expected.status
+      actual: actual.statusCode.toString()
+      expected: expected.status.toString()
       params
       callbacks
       errors
