@@ -100,6 +100,7 @@ The customer submits an e-mail address in the form.
 POST {{<example_uri}}/step3
 > Accept: application/json
 > Content-Type: application/json
+> Cookie: katt_scenario=basic.apib, katt_transaction=2
 {
     "email": "test-customer@foo.klarna.com"
 }
@@ -121,6 +122,7 @@ We inform him that payment is required.
 POST {{<example_uri}}/step4
 > Accept: application/json
 > Content-Type: application/json
+> Cookie: katt_scenario=basic.apib, katt_transaction=3
 {
     "email": "test-customer@foo.klarna.com",
     "password": "correct horse battery staple"
