@@ -36,7 +36,7 @@ describe 'katt', () ->
             params: {
               hostname
               port
-              example_uri: 'http://#{hostname}:#{port}/step2'
+              example_uri: "http://#{hostname}:#{port}/step2"
             }
 
         app = kattPlayer.makeServer engine
