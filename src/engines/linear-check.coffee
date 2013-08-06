@@ -22,6 +22,7 @@ _ = require 'lodash'
 katt = require 'katt-js'
 {
   isJsonCT
+  normalizeHeaders
   parseHost
 } = katt.utils
 callbacks = katt.callbacks
@@ -280,9 +281,27 @@ module.exports = class LinearCheckEngine
       @_maybeSetContentLocation req, res
     else
       errors = []
+      actualRequest = _.cloneDeep {
+        method: req.method
+        url: req.url
+        headers: req.headers
+        body: req.body
+      }
+      actualRequest.body = callbacks.parse {
+        headers: normalizeHeaders actualRequest.headers
+        body: actualRequest.body
+      }
+      expectedRequest = _.cloneDeep transaction.request
+      do () =>
+        for key, value of expectedRequest
+          expectedRequest[key] = @recallDeep value, context.params
+      expectedRequest.body = callbacks.parse {
+        headers: normalizeHeaders expectedRequest.headers
+        body: expectedRequest.body
+      }
       @validateRequest {
-        actual: req
-        expected: transaction.request
+        actual: actualRequest
+        expected: expectedRequest
         params: context.params
         callbacks
         errors
@@ -294,8 +313,8 @@ module.exports = class LinearCheckEngine
     res.cookies.katt_scenario = context.scenario.filename
     res.cookies.katt_transaction = context.transactionIndex
 
-    headers = @recallDeep(transaction.response.headers, context.params) or {}
-    res.body = @recallDeep transaction.response.body, context.params
+    headers = @recallDeep(_.cloneDeep(transaction.response.headers), context.params) or {}
+    res.body = @recallDeep _.cloneDeep(transaction.response.body), context.params
 
     res.statusCode = transaction.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
@@ -333,6 +352,7 @@ module.exports = class LinearCheckEngine
 
   validateReqRes: ({actual, expected, params, callbacks, errors}) ->
     errors ?= []
+
     if @options.check.headers
       validateHeaders {
         actual: actual.headers
@@ -343,12 +363,7 @@ module.exports = class LinearCheckEngine
       }
     if @options.check.body
       validateBody {
-        actual: callbacks.parse {
-          headers: actual.headers
-          body: actual.body
-          params
-          callbacks
-        }
+        actual: actual.body
         expected: expected.body
         params
         callbacks
