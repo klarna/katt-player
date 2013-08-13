@@ -102,7 +102,6 @@ module.exports = class LinearCheckEngine
 
 
   middleware: (req, res, next) =>
-    # FIXME better idea? proxies might rewrite the path
     if /katt_scenarios\.json/.test req.url
       @middleware_json req, res, next
     else
@@ -153,16 +152,12 @@ module.exports = class LinearCheckEngine
       Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
       """
 
-    # FIXME this is not really the index, it's the reference point (the last transaction step), so please rename
     if resetToTransactionIndex?
       currentTransactionIndex = parseInt resetToTransactionIndex, 10
     else
       currentTransactionIndex = context.transactionIndex
     # Check for transaction index
     context.transactionIndex = parseInt transactionIndex, 10
-
-    # FIXME if context.transactionIndex < currentTransactionIndex, then it means we went back in time
-    # and it might be better to clear the context.params
 
     # Check if we're FFW transactions
     if context.transactionIndex > currentTransactionIndex
@@ -248,7 +243,6 @@ module.exports = class LinearCheckEngine
     mockRequest.url = @recallDeep transaction.request.url, context.params
     mockRequest.headers = @recallDeep(transaction.request.headers, context.params) or {}
     mockRequest.body = @recallDeep transaction.request.body, context.params
-    # FIXME special treat for cookies (sync req.cookies with Cookie header)
 
     mockResponse = new MockResponse()
 

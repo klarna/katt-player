@@ -31,7 +31,7 @@ module.exports = class MockRequest
     return  unless req
     @context = req.context
     @sessionID = req.sessionID
-    @cookies = req.cookies # FIXME not part of vanilla NodeJS serverResponse
+    @cookies = req.cookies
 
 
   getHeader: (header) ->
