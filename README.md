@@ -1,6 +1,45 @@
 # KATT player [![Build Status][2]][1]
 
-KATT player is a mock HTTP server that replies with HTTP responses based on KATT blueprints."
+KATT player is a mock HTTP server that replies with HTTP responses
+based on KATT blueprints.
+
+KATT blueprints describe a scenario as a sequence of HTTP requests and
+responses (the pair is called an HTTP transaction).
+
+KATT player instantiates an HTTP server that loads these scenarios and,
+given a reference to one of them, it can respond to a HTTP request
+with the HTTP response prescribed by the referenced scenario.
+
+The HTTP response is decided by a KATT player engine. Two engines are built-in:
+one that validates the incoming requests against the blueprint (`linear-check`),
+and one that doesn't and just blindly replies with the consecutive response
+(`linear`). The former is the default.
+
+
+## Built-in engines
+
+These two engines will look at
+
+* the request's cookie `katt_scenario` to decide which scenario to focus on
+(e.g. basename of the scenario)
+* the request's cookie `katt_transaction` to decide the request to match against
+and which response is suitable (defaults to 0)
+
+Both engines will automatically set a response header `Set-Cookie` in order
+to advance the transaction count.
+
+The `linear-check` engine can have the validation turned off temporarily via a
+request header `X-KATT-Dont-Validate`.
+
+You can see an example [here](test/katt-player-fixtures.coffee#L55).
+
+
+## Custom engines
+
+Custom engines may be implemented in order to add support for dealing with KATT
+recall structures, for example.
+
+There are no restrictions or requirements at all.
 
 
 ## Install
