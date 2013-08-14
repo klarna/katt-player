@@ -194,7 +194,7 @@ module.exports = class LinearCheckEngine
       req.url = @recallDeep context.scenario.blueprint.transactions[nextTransactionIndex].request.url, context.params
 
     # Play
-    res.cookies['x-katt-dont-validate'] = ''  if req.cookies['x-katt-dont-validate']
+    res.cookies['katt_dont_validate'] = ''  if req.cookies['katt_dont_validate']
     @_playTransactionIndex req, res
 
 
@@ -253,7 +253,7 @@ module.exports = class LinearCheckEngine
 
   _dontValidate: (req, res) ->
     header = req.headers['x-katt-dont-validate']
-    cookie = req.cookies['x-katt-dont-validate']
+    cookie = req.cookies['katt_dont_validate']
     header or cookie
 
 
