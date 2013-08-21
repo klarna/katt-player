@@ -65,7 +65,7 @@ module.exports = class LinearCheckEngine
         scenario: undefined
         transaction: 0
       params: {}
-      callbacks:
+      hooks:
         preSend: undefined
         postSend: undefined
       check:
@@ -313,11 +313,10 @@ module.exports = class LinearCheckEngine
     res.statusCode = transaction.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
 
-    @callback 'preSend', req, res, () =>
-      contentType = _.find res.headers, (header) -> header.toLowerCase() is 'content-type'
-      res.body = JSON.stringify(res.body, null, 2)  if isJsonCT contentType
+    @callHook 'preSend', req, res, () =>
+      res.body = JSON.stringify(res.body, null, 2)  if isJsonCT res.getHeader 'content-type'
       res.send res.body
-      @callback 'postSend', req, res
+      @callHook 'postSend', req, res, () ->
 
     true
 
@@ -331,9 +330,9 @@ module.exports = class LinearCheckEngine
       input
 
 
-  callback: (name, req, res, next) ->
-    if @options.callbacks[name]?
-      @options.callbacks[name] req, res, next
+  callHook: (name, req, res, next) ->
+    if @options.hooks[name]?
+      @options.hooks[name] req, res, next
     else
       next()  if next?
 
