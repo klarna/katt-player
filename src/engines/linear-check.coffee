@@ -179,19 +179,6 @@ module.exports = class LinearCheckEngine
         logPrefix = "#{context.scenario.filename}\##{nextTransactionIndex}"
         transaction = context.scenario.blueprint.transactions[nextTransactionIndex - 1]
 
-        # Validate response, so that we can continue with the request
-        errors = []
-        @validateResponse {
-          actual: mockResponse
-          expected: transaction.response
-          params: context.params
-          callbacks
-          errors
-        }
-        if errors.length
-          errors = JSON.stringify errors, null, 2
-          return @sendError res, 403, "#{logPrefix} < Response does not match\n#{errors}"
-
         # Remember mockResponse cookies for next request
         do () ->
           for key, value of mockResponse.cookies
@@ -382,44 +369,6 @@ module.exports = class LinearCheckEngine
     validateUrl {
       actual: actual.url
       expected: expected.url
-      params
-      callbacks
-      errors
-    }
-    @validateReqRes {
-      actual
-      expected
-      params
-      callbacks
-      errors
-    }
-    errors
-
-
-  validateResponse: ({actual, expected, params, callbacks, errors}) ->
-    errors ?= []
-
-    actual = _.cloneDeep {
-      statusCode: actual.statusCode
-      headers: actual.headers
-      body: actual.body
-    }
-    actual.body = callbacks.parse {
-      headers: normalizeHeaders actual.headers
-      body: actual.body
-    }
-    expected = _.cloneDeep expected
-    do () =>
-      for key, value of expected
-        expected[key] = @recallDeep value, params
-    expected.body = callbacks.parse {
-      headers: normalizeHeaders expected.headers
-      body: expected.body
-    }
-
-    validateStatusCode {
-      actual: actual.statusCode.toString()
-      expected: expected.status.toString()
       params
       callbacks
       errors
