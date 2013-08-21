@@ -80,6 +80,13 @@ module.exports = class LinearCheckEngine
   loadScenario: (filename) ->
     try
       blueprint = katt.readScenario filename
+      for transaction in blueprint.transactions
+        for reqres in [transaction.request, transaction.response]
+          continue  unless reqres.body?
+          reqres.body = callbacks.parse {
+            headers: normalizeHeaders reqres.headers
+            body: reqres.body
+          }
     catch e
       throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
     @scenariosByFilename[filename] = {
@@ -194,6 +201,10 @@ module.exports = class LinearCheckEngine
       req.url = @recallDeep context.scenario.blueprint.transactions[nextTransactionIndex].request.url, context.params
 
     # Play
+    req.body = callbacks.parse {
+      headers: normalizeHeaders req.headers
+      body: req.body
+    }
     res.cookies['katt_dont_validate'] = ''  if req.cookies['katt_dont_validate']
     @_playTransactionIndex req, res
 
@@ -275,27 +286,9 @@ module.exports = class LinearCheckEngine
       @_maybeSetContentLocation req, res
     else
       errors = []
-      actualRequest = _.cloneDeep {
-        method: req.method
-        url: req.url
-        headers: req.headers
-        body: req.body
-      }
-      actualRequest.body = callbacks.parse {
-        headers: normalizeHeaders actualRequest.headers
-        body: actualRequest.body
-      }
-      expectedRequest = _.cloneDeep transaction.request
-      do () =>
-        for key, value of expectedRequest
-          expectedRequest[key] = @recallDeep value, context.params
-      expectedRequest.body = callbacks.parse {
-        headers: normalizeHeaders expectedRequest.headers
-        body: expectedRequest.body
-      }
       @validateRequest {
-        actual: actualRequest
-        expected: expectedRequest
+        actual: req
+        expected: transaction.request
         params: context.params
         callbacks
         errors
@@ -367,6 +360,17 @@ module.exports = class LinearCheckEngine
 
   validateRequest: ({actual, expected, params, callbacks, errors}) ->
     errors ?= []
+    actual = _.cloneDeep {
+      method: actual.method
+      url: actual.url
+      headers: actual.headers
+      body: actual.body
+    }
+    expected = _.cloneDeep expected
+    do () =>
+      for key, value of expected
+        expected[key] = @recallDeep value, params
+
     if @options.check.method
       validateMethod {
         actual: actual.method.toUpperCase()
@@ -394,6 +398,25 @@ module.exports = class LinearCheckEngine
 
   validateResponse: ({actual, expected, params, callbacks, errors}) ->
     errors ?= []
+
+    actual = _.cloneDeep {
+      statusCode: actual.statusCode
+      headers: actual.headers
+      body: actual.body
+    }
+    actual.body = callbacks.parse {
+      headers: normalizeHeaders actual.headers
+      body: actual.body
+    }
+    expected = _.cloneDeep expected
+    do () =>
+      for key, value of expected
+        expected[key] = @recallDeep value, params
+    expected.body = callbacks.parse {
+      headers: normalizeHeaders expected.headers
+      body: expected.body
+    }
+
     validateStatusCode {
       actual: actual.statusCode.toString()
       expected: expected.status.toString()
