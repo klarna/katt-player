@@ -22,8 +22,8 @@ pkg = require '../package'
 # For argument validation / transformation.
 CUSTOM_TYPES =
   engine: (value) ->
-    if kattPlayer.hasEngine value
-      kattPlayer.getEngine value
+    if kattPlayer.engines[value]
+      kattPlayer.engines[value]
     else if fs.existsSync value
       require value
     else
@@ -37,7 +37,7 @@ CUSTOM_TYPES =
 
 
 parseArgs = (args) ->
-  engines = kattPlayer.getEngineNames().join ', '
+  engines = _.keys(kattPlayer.engines).join ', '
   ArgumentParser = argparse.ArgumentParser
 
   parser = new ArgumentParser
