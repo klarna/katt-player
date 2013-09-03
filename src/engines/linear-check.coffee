@@ -136,13 +136,14 @@ module.exports = class LinearCheckEngine
 
     sessionID = res.cookies.katt_session_id = req.cookies.katt_session_id or (new Date().getTime())
 
+    # TODO: options.params has to supply host, hostname & port to override correctly
+    # we should parse host for options as well
     UID = sessionID + " # " + scenarioFilename
     context = req.context = @_contexts[UID] ?= {
       UID
       scenario: undefined
       transactionIndex: 0
-      params: _.merge {}, @options.params or {},
-        parseHost req.headers.host
+      params: _.merge (parseHost req.headers.host), (@options.params or {})
     }
 
     # Check for scenario
