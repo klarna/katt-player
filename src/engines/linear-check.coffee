@@ -152,19 +152,29 @@ module.exports = class LinearCheckEngine
 
     transactionIndex = @_middleware_resolveTransactionIndex req, res, transactionIndex
 
-    unknownTransactionIndex = _.isNaN transactionIndex - 0
-    unknownResetTransactionIndex = resetToTransactionIndex isnt undefined and _.isNaN resetToTransactionIndex - 0
+    unknownTransactionIndex = _.isNaN(transactionIndex-0)
+    unknownResetTransactionIndex = resetToTransactionIndex? and _.isNaN(resetToTransactionIndex-0)
     if unknownTransactionIndex or unknownResetTransactionIndex
       return @sendError res, 500, """
-      Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
+transactionIndex      Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
       """
 
     if resetToTransactionIndex?
-      currentTransactionIndex = parseInt resetToTransactionIndex, 10
+      currentTransactionIndex = resetToTransactionIndex = parseInt resetToTransactionIndex, 10
     else
       currentTransactionIndex = context.transactionIndex
     # Check for transaction index
-    context.transactionIndex = parseInt transactionIndex, 10
+    context.transactionIndex = transactionIndex = parseInt transactionIndex, 10
+
+    isOutOfBounds = (i) ->
+      i not in [0..context.scenario.blueprint.transactions.length-1]
+
+    outOfBoundsTransactionIndex = isOutOfBounds(transactionIndex)
+    outOfBoundsResetTransactionIndex = resetToTransactionIndex? and isOutOfBounds(resetToTransactionIndex)
+    if outOfBoundsTransactionIndex or outOfBoundsResetTransactionIndex
+      return @sendError res, 500, """
+      Out of bound transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
+      """
 
     # Check if we're FFW transactions
     if context.transactionIndex > currentTransactionIndex
