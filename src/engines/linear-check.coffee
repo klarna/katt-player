@@ -83,10 +83,14 @@ module.exports = class LinearCheckEngine
       for transaction in blueprint.transactions
         for reqres in [transaction.request, transaction.response]
           continue  unless reqres.body?
-          reqres.body = callbacks.parse {
-            headers: normalizeHeaders reqres.headers
-            body: reqres.body
-          }
+          try
+            reqres.body = callbacks.parse {
+              headers: normalizeHeaders reqres.headers
+              body: reqres.body
+            }
+          catch e
+            console.log 'loadScenarios error while parsing ', reqres
+            throw new Error "Unable to parse blueprint"
     catch e
       throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
     @scenariosByFilename[filename] = {
