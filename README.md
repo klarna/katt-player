@@ -77,4 +77,4 @@ app.listen 1337
 
 
   [1]: https://travis-ci.org/klarna/katt-player
-  [2]: https://travis-ci.org/klatna/katt-player.png
+  [2]: https://travis-ci.org/klarna/katt-player.png
