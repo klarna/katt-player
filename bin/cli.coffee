@@ -56,7 +56,7 @@ parseArgs = (args) ->
     type: 'int'
 
   parser.addArgument ['--hostname'],
-    help: 'Server hostname / IP address. (%(defaultValue)d)'
+    help: 'Server hostname / IP address. (%(defaultValue)s)'
     defaultValue: '0.0.0.0'
     type: 'string'
 
