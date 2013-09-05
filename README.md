@@ -45,7 +45,12 @@ There are no restrictions or requirements at all.
 ## Install
 
 ```bash
+# NPM distribution
 npm install katt-player
+
+# GIT source
+git clone --recurse-submodules [THIS_REPO_URL]
+npm install
 ```
 
 
