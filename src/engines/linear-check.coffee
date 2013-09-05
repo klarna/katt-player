@@ -157,11 +157,11 @@ module.exports = class LinearCheckEngine
 
     transactionIndex = @_middleware_resolveTransactionIndex req, res, transactionIndex
 
-    unknownTransactionIndex = _.isNaN(transactionIndex-0)
-    unknownResetTransactionIndex = resetToTransactionIndex? and _.isNaN(resetToTransactionIndex-0)
+    unknownTransactionIndex = _.isNaN(transactionIndex - 0)
+    unknownResetTransactionIndex = resetToTransactionIndex? and _.isNaN(resetToTransactionIndex - 0)
     if unknownTransactionIndex or unknownResetTransactionIndex
       return @sendError res, 500, """
-transactionIndex      Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
+Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{resetToTransactionIndex}
       """
 
     if resetToTransactionIndex?
@@ -172,7 +172,7 @@ transactionIndex      Unknown transactions with filename #{scenarioFilename} - #
     context.transactionIndex = transactionIndex = parseInt transactionIndex, 10
 
     isOutOfBounds = (i) ->
-      i not in [0..context.scenario.blueprint.transactions.length-1]
+      i not in [0..context.scenario.blueprint.transactions.length - 1]
 
     outOfBoundsTransactionIndex = isOutOfBounds(transactionIndex)
     outOfBoundsResetTransactionIndex = resetToTransactionIndex? and isOutOfBounds(resetToTransactionIndex)
