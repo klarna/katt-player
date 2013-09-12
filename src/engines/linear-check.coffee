@@ -14,10 +14,6 @@
    limitations under the License.
 ###
 
-fs = require 'fs'
-path = require 'path'
-url = require 'url'
-glob = require 'glob'
 _ = require 'lodash'
 katt = require 'katt-js'
 {
@@ -36,14 +32,9 @@ callbacks = katt.callbacks
 } = katt.validate
 MockResponse = require '../mock-response'
 MockRequest = require '../mock-request'
+BasicEngine = require './basic'
 
-
-GLOB_OPTIONS =
-  nosort: true
-  stat: false
-
-
-module.exports = class LinearCheckEngine
+module.exports = class LinearCheckEngine extends BasicEngine
   options: undefined
   _contexts: undefined
   _playTransactionIndex_modifyContext: () ->
@@ -74,42 +65,7 @@ module.exports = class LinearCheckEngine
         headers: true
         body: true
     }
-    @loadScenarios scenarios
-
-
-  loadScenario: (filename) ->
-    try
-      blueprint = katt.readScenario filename
-      for transaction in blueprint.transactions
-        for reqres in [transaction.request, transaction.response]
-          continue  unless reqres.body?
-          try
-            reqres.body = callbacks.parse {
-              headers: normalizeHeaders reqres.headers
-              body: reqres.body
-            }
-          catch e
-            console.log 'loadScenarios error while parsing ', reqres
-            throw new Error "Unable to parse blueprint"
-    catch e
-      throw new Error "Unable to find/parse blueprint file #{filename}\n#{e}"
-    @scenariosByFilename[filename] = {
-      filename
-      blueprint
-    }
-
-
-  loadScenarios: (scenarios) ->
-    scenarios = [scenarios]  unless _.isArray scenarios
-    for scenario in scenarios
-      continue  unless fs.existsSync scenario
-      scenario = path.normalize scenario
-
-      if fs.statSync(scenario).isDirectory()
-        apibs = glob.sync "#{scenario}/**/*.apib", GLOB_OPTIONS
-        @loadScenarios apibs
-      else if fs.statSync(scenario).isFile()
-        @loadScenario scenario
+    super
 
 
   middleware: (req, res, next) =>
@@ -307,11 +263,7 @@ Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{r
 
     res.statusCode = transaction.response.status
     res.setHeader header, headerValue  for header, headerValue of headers
-
-    @callHook 'preSend', req, res, () =>
-      res.body = JSON.stringify(res.body, null, 2)  if isJsonCT res.getHeader 'content-type'
-      res.send res.body
-      @callHook 'postSend', req, res, () ->
+    @sendResponse req, res
 
     true
 
@@ -323,19 +275,6 @@ Unknown transactions with filename #{scenarioFilename} - #{transactionIndex}|#{r
     else
       input[key] = @recallDeep input[key], params  for key in _.keys input
       input
-
-
-  callHook: (name, req, res, next) ->
-    if @options.hooks[name]?
-      @options.hooks[name] req, res, next
-    else
-      next()  if next?
-
-
-  sendError: (res, statusCode, error) ->
-    res.setHeader 'Content-Type', 'text/plain'
-    res.setHeader 'X-KATT-Error', encodeURIComponent error.split('\n').shift()
-    res.send statusCode, error
 
 
   validateReqRes: ({actual, expected, params, callbacks, errors}) ->

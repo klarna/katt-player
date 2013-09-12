@@ -18,6 +18,13 @@ and one that doesn't and just blindly replies with the consecutive response
 
 ## Built-in engines
 
+### The `basic` engine
+
+* the `basic` engine is a minimal engine with some basic functionality for
+loading scenarios / blueprints. It is supposed to be extended by other engines.
+
+### The `linear-check` and `linear` engines
+
 These two engines will look at
 
 * the request's cookie `katt_scenario` to decide which scenario to focus on
